@@ -10,6 +10,12 @@ A tool for simulating destructive behavior of production infrastructure
 
 ## Usage
 
+Using cargo:
+```bash
+cargo run config.yml
+```
+
+Using distributive:
 ```bash
 paws config.yml
 ```
