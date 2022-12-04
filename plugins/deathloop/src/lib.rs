@@ -10,9 +10,7 @@ pub extern "Rust" fn new_service() -> Box<dyn PlugInterface> {
 }
 
 
-
-#[cfg(unix)]
-pub fn new_docker() -> Result<Docker> {
+#[cfg(unix)] pub fn new_docker() -> Result<Docker> {
     Ok(Docker::unix("/var/run/docker.sock"))
 }
 
@@ -24,7 +22,7 @@ pub struct ContainerRestartPlugin {
 impl ContainerRestartPlugin {
     fn new() -> ContainerRestartPlugin {
         let name = "deathloop";
-        println!("[{}] Created instance!", name);
+        println!("[{}] Plugin started", name);
         ContainerRestartPlugin { name: name.to_string() }
     }
 }
@@ -118,7 +116,7 @@ impl PlugInterface for ContainerRestartPlugin {
 
 impl Drop for ContainerRestartPlugin {
     fn drop(&mut self) {
-        println!("[{}] Destroyed instance!", self.name);
+        println!("[{}] Plugin finished", self.name);
     }
 
 
