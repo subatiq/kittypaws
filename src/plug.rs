@@ -1,7 +1,11 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::collections::HashMap;
+use pyo3::prelude::*;
+use pyo3::types::IntoPyDict;
+use pyo3::types::{PyModule, PyList};
 
+#[derive(Debug)]
 pub enum PluginLanguage {
     RUST,
     PYTHON
@@ -15,6 +19,14 @@ pub struct Plugin {
 
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>);
+}
+
+impl PluginInterface for pyo3::Py<PyAny> {
+    fn run(&self, config: &HashMap<String, String>) {
+        let mut pyconfig = HashMap::new();
+        pyconfig.insert("config", &config);
+        Python::with_gil(|py| self.call(py, (), Some(pyconfig.into_py_dict(py)))).unwrap();
+    }
 }
 
 
@@ -37,14 +49,16 @@ impl PluginManifest {
 
     pub fn run(&self, config: HashMap<String, HashMap<String, String>>) {
         for (name, plugin) in &self.plugins {
-            let plugconfig = config.get(name).unwrap();
-            plugin.run(&plugconfig);
+            match config.get(name) {
+                Some(n) => plugin.run(&n),
+                None => {}
+            }
         }
     }
 }
 
 
-fn get_files_list(path: PathBuf) -> Vec<String> {
+fn get_files_list(path: &PathBuf) -> Vec<String> {
         return fs::read_dir(path).unwrap()
             .map(|x| x.unwrap()
             .file_name()
@@ -67,7 +81,8 @@ pub fn get_plug_list() -> Vec<Plugin> {
         let plugpath = path.unwrap().path();
         let name = plugpath.file_name().unwrap().to_str().unwrap().to_string();
 
-        let language = detect_language(get_files_list(plugpath));
+        let language = detect_language(get_files_list(&plugpath));
+        println!("Found plugin: {} with language: {:?}", name, language);
         plugins.push(Plugin { name, language });
     }
     plugins
@@ -76,16 +91,31 @@ pub fn get_plug_list() -> Vec<Plugin> {
 
 pub fn load_plugins(plugins: Vec<Plugin>, manifest: &mut PluginManifest) {
     for plugin in plugins {
-        let lib = libloading::Library::new(format!("target/debug/lib{}.dylib", plugin.name))
-            .expect("load library");
         match plugin.language {
             PluginLanguage::RUST => {
+            let lib = libloading::Library::new(format!("target/debug/lib{}.dylib", plugin.name))
+                .expect("load library");
             let interface: libloading::Symbol<extern "Rust" fn() -> Box<dyn PluginInterface>> = unsafe { lib.get(b"new_service") }
             .expect("load symbol");
             
             manifest.register(plugin.name, interface());
+            },
+            PluginLanguage::PYTHON => {
+                let entrypoint_path = format!("plugins/{}/main.py", plugin.name);
+                let pypath = Path::new(&entrypoint_path);
+                let py_app = fs::read_to_string(&pypath).expect("read main.py");
+                Python::with_gil(|py| {
+                    let syspath: &PyList = py.import("sys").unwrap()
+                        .getattr("path").unwrap()
+                        .downcast::<PyList>().unwrap();
+                    syspath.insert(0, &pypath).unwrap();
+                    let app: Py<PyAny> = PyModule::from_code(py, &py_app, "", "").unwrap()
+                        .getattr("run").unwrap()
+                        .into();
+                    manifest.register(plugin.name, Box::new(app));
+                    // app.call0(py)
+                });
             }
-            _ => {}
         }
     }
 }
