@@ -76,7 +76,7 @@ impl PlugInterface for ContainerRestartPlugin {
         loop {
             println!("[{}] Running with config: {:?}", self.name, config);
             let target = config.get("target").expect("No target specified");
-            let frequency = match config.get("frequency").or(Some(&"fixed".to_string())) {
+            let frequency = match config.get("frequency") {
                 Some(f) => match f.as_str() {
                     "fixed" => Frequency::Fixed,
                     "random" => Frequency::Random,
