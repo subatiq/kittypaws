@@ -35,3 +35,17 @@ deathloop:
 - `once` - just quits after one restart. 
 
 Time durations comply with ISO 8601.
+
+### Dropper
+
+Drop connection to certain IP addresses
+
+Config example: 
+```yaml
+dropper: 
+  target: container_name
+  ip: X.X.X.X
+  available_seconds: 15
+  unavailable_seconds: 10
+```
+
