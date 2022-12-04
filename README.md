@@ -10,7 +10,9 @@ A tool for simulating destructive behavior of production infrastructure
 
 ## Usage
 
-`paws config.yml`
+```bash
+paws config.yml
+```
 
 ## Plugins
 
