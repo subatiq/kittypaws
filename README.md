@@ -8,6 +8,10 @@ A tool for simulating destructive behavior of production infrastructure
 *DO NOT GO PASS THAT TEXT*
 
 
+## Usage
+
+`paws config.yml`
+
 ## Plugins
 
 ### Deathloop
