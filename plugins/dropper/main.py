@@ -17,6 +17,6 @@ def run(config: dict[str, str]) -> None:
         output = check_output(f"docker exec {target} bash -c 'iptables -C OUTPUT -d {ip} -j DROP || iptables -I OUTPUT -d {ip} -j DROP'", shell=True)
         print(f'--- {ip} is unavailable now for {target}. Switching in {unavailable_seconds} sec')
         time.sleep(unavailable_seconds)
-        output = check_output(f"docker exec {target} bash -c 'iptables -C OUTPUT -d {ip} -j DROP || iptables -D OUTPUT -d {ip} -j DROP'", shell=True)
+        output = check_output(f"docker exec {target} bash -c 'iptables -D OUTPUT -d {ip} -j DROP'", shell=True)
         print(f'+++ {ip} is available now for {target}. Switching in {available_seconds} sec')
         time.sleep(available_seconds)
