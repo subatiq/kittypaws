@@ -1,6 +1,4 @@
 use std::fs;
-use tokio::task;
-use std::sync::mpsc::{channel, Sender, Receiver};
 use tokio::task::JoinHandle;
 use std::fmt;
 use std::error;
@@ -88,7 +86,12 @@ impl PluginManifest {
         }
 
         for handle in handles {
-            tokio::join!(handle);
+            match tokio::join!(handle).0 {
+                Ok(_) => {},
+                Err(e) => {
+                    eprintln!("Error running plugin: {}", e);
+                }
+            }
         }
     }
 }
@@ -96,8 +99,15 @@ impl PluginManifest {
 
 fn unwrap_home_path(path: &str) -> PathBuf {
     if path.starts_with("~") {
-        let home = std::env::var("HOME").unwrap();
-        PathBuf::from(&path.replace("~", &home))
+        match std::env::var("HOME") {
+            Ok(home) => {
+                PathBuf::from(&path.replace("~", &home))
+            }
+            Err(_) => {
+                println!("Could not find home directory");
+                PathBuf::from(path)
+            }
+        }
     }
     else {
         PathBuf::from(path)
@@ -176,21 +186,27 @@ fn load_python_plugin(name: &str, manifest: &mut PluginManifest) -> Result<(), P
     let path_to_main = Path::new(&entrypoint_path);
 
     if path_to_main.exists(){ 
-        let py_app = fs::read_to_string(&path_to_main).unwrap();
-        
-        Python::with_gil(|py| {
-            let syspath: &PyList = py.import("sys").unwrap()
-                .getattr("path").unwrap()
-                .downcast::<PyList>().unwrap();
+        match fs::read_to_string(&path_to_main) {
+            Ok(code) => {
+                Python::with_gil(|py| {
+                    let syspath: &PyList = py.import("sys").unwrap()
+                        .getattr("path").unwrap()
+                        .downcast::<PyList>().unwrap();
 
-            syspath.insert(0, &path_to_main).unwrap();
+                    syspath.insert(0, &path_to_main).unwrap();
 
-            let app: Py<PyAny> = PyModule::from_code(py, &py_app, "", "").unwrap()
-                .getattr("run").unwrap()
-                .into();
+                    let app: Py<PyAny> = PyModule::from_code(py, &code, "", "").unwrap()
+                        .getattr("run").unwrap()
+                        .into();
 
-            manifest.register(name.to_string(), Box::new(app) as CallablePlugin);
-        });
+                    manifest.register(name.to_string(), Box::new(app) as CallablePlugin);
+                });
+            },
+            Err(_) => {
+                println!("Could not read plugin code");
+                return Err(PluginLoadError::StructureError);
+            }
+        }
     }
     else {
         println!("No main.py found in plugin: {}", name);
