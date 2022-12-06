@@ -71,13 +71,21 @@ impl PluginManifest {
     }
 
     pub async fn run(&self, config: &HashMap<String, HashMap<String, String>>) {
-        let handles = self.plugins.iter().map(|(name, plugin)| {
-            let plugconfig: HashMap<String, String> = config.get(name).unwrap().clone();
-            let plugin: CallablePlugin = plugin.clone();
-            task::spawn(async move {
-                plugin.run(&plugconfig);
-            })
-        }).collect::<Vec<JoinHandle<()>>>();
+        let mut handles: Vec<JoinHandle<()>> = Vec::new();
+
+        for (name, plugin) in self.plugins.iter() {
+            match config.get(name) {
+                Some(plugconfig) => {
+                    let plugin: CallablePlugin = plugin.clone();
+                    let plugconfig = plugconfig.clone();
+
+                    handles.push(tokio::spawn(async move {
+                        plugin.run(&plugconfig);
+                    }));
+                },
+                None => {}
+            }
+        }
 
         for handle in handles {
             tokio::join!(handle);
