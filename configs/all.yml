@@ -1,0 +1,7 @@
+deathloop: 
+  target: ev_sensor
+  frequency: random
+  interval: PT1M
+dropper:
+  target: ev_sensor
+  ip: 192.168.85.139

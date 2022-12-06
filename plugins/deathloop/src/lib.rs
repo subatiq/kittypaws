@@ -112,6 +112,10 @@ impl PlugInterface for ContainerRestartPlugin {
             }
         }
     }
+
+    fn clone_dyn(&self) -> Box<dyn PlugInterface + Send> {
+        Box::new(ContainerRestartPlugin::new())
+    }
 }
 
 impl Drop for ContainerRestartPlugin {
