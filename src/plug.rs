@@ -1,5 +1,7 @@
 use std::fs;
-use tokio::task::JoinHandle;
+use std::thread::JoinHandle;
+use std::thread;
+use std::sync::{Arc, Mutex};
 use std::fmt;
 use std::error;
 use std::path::{PathBuf, Path};
@@ -9,7 +11,7 @@ use pyo3::types::IntoPyDict;
 use pyo3::types::{PyModule, PyList};
 
 const PLUGINS_PATH: &str = "~/.kittypaws/plugins";
-type CallablePlugin = Box<dyn PluginInterface + Send>;
+type CallablePlugin = Box<dyn PluginInterface + Send + Sync + 'static>;
 
 #[derive(Debug)]
 pub enum PluginLanguage {
@@ -25,14 +27,6 @@ pub struct Plugin {
 
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>);
-    fn clone_dyn(&self) -> CallablePlugin;
-}
-
-
-impl Clone for CallablePlugin {
-    fn clone(&self) -> Self {
-        self.clone_dyn()
-    }
 }
 
 
@@ -41,10 +35,6 @@ impl PluginInterface for pyo3::Py<PyAny> {
         let mut pyconfig = HashMap::new();
         pyconfig.insert("config", &config);
         Python::with_gil(|py| self.call(py, (), Some(pyconfig.into_py_dict(py)))).unwrap();
-    }
-
-    fn clone_dyn(&self) -> CallablePlugin {
-        Box::new(self.clone())
     }
 }
 
@@ -68,28 +58,34 @@ impl PluginManifest {
         self.plugins.insert(name, interface);
     }
 
-    pub async fn run(&self, config: &HashMap<String, HashMap<String, String>>) {
+    fn run_plugin(&self, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
+        let self_copy = Arc::new(Mutex::new(plugin)).clone();
+        return thread::spawn(move || {
+            self_copy.lock().unwrap().run(&config);
+        })
+    }
+
+    pub fn run(&mut self, config: &HashMap<String, HashMap<String, String>>) {
         let mut handles: Vec<JoinHandle<()>> = Vec::new();
+        let keys = self.plugins.keys().into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
 
-        for (name, plugin) in self.plugins.iter() {
-            match config.get(name) {
+        for name in keys {
+            match config.get(&name) {
                 Some(plugconfig) => {
-                    let plugin: CallablePlugin = plugin.clone();
+                    let plugin = self.plugins.remove(&name).unwrap();
                     let plugconfig = plugconfig.clone();
-
-                    handles.push(tokio::spawn(async move {
-                        plugin.run(&plugconfig);
-                    }));
+                    let thread = self.run_plugin(plugin, plugconfig);
+                    handles.push(thread);
                 },
                 None => {}
             }
         }
 
         for handle in handles {
-            match tokio::join!(handle).0 {
+            match handle.join() {
                 Ok(_) => {},
                 Err(e) => {
-                    eprintln!("Error running plugin: {}", e);
+                    println!("Error: {:?}", e);
                 }
             }
         }
@@ -224,10 +220,10 @@ fn load_rust_plugin(name: &str, manifest: &mut PluginManifest) {
 
     let lib = libloading::Library::new(format!("{}/{}/lib{}.dylib", &plugins_dirname, name, name))
         .expect("load library");
-    let interface: libloading::Symbol<extern "Rust" fn() -> Box<dyn PluginInterface + Send>> = unsafe { lib.get(b"new_service") }
+    let interface: libloading::Symbol<extern "Rust" fn() -> CallablePlugin> = unsafe { lib.get(b"new_service") }
     .expect("load symbol");
     
-    manifest.register(name.to_string(), interface());
+    manifest.register(name.to_string(), interface() as CallablePlugin);
 }
 
 
