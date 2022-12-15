@@ -12,6 +12,7 @@ use pyo3::types::{PyModule, PyList};
 
 const PLUGINS_PATH: &str = "~/.kittypaws/plugins";
 type CallablePlugin = Box<dyn PluginInterface + Send + Sync + 'static>;
+type PluginConfig = HashMap<String, HashMap<String, String>>;
 
 #[derive(Debug)]
 pub enum PluginLanguage {
@@ -46,11 +47,11 @@ pub struct PluginManifest {
 
 
 impl PluginManifest {
-    pub fn from_discovered_plugins() -> PluginManifest {
+    pub fn load_plugins(config: &PluginConfig) -> PluginManifest {
         let mut manifest = PluginManifest {
             plugins: HashMap::new()
         };
-        load_plugins(get_plug_list(), &mut manifest);
+        load_plugins(get_plug_list(&config), &mut manifest);
         manifest
     }
 
@@ -72,12 +73,15 @@ impl PluginManifest {
         for name in keys {
             match config.get(&name) {
                 Some(plugconfig) => {
+                    dbg!(&plugconfig);
                     let plugin = self.plugins.remove(&name).unwrap();
                     let plugconfig = plugconfig.clone();
                     let thread = self.run_plugin(plugin, plugconfig);
                     handles.push(thread);
                 },
-                None => {}
+                None => {
+                    dbg!(name);
+                }
             }
         }
 
@@ -127,7 +131,7 @@ fn detect_language(internal_files: Vec<String>) -> PluginLanguage {
 }
 
 
-pub fn get_plug_list() -> Vec<Plugin> {
+pub fn get_plug_list(config: &PluginConfig) -> Vec<Plugin> {
     let mut plugins = Vec::new();
     let path = unwrap_home_path(PLUGINS_PATH);
 
@@ -136,6 +140,10 @@ pub fn get_plug_list() -> Vec<Plugin> {
             for path in paths {
                 let plugpath = path.unwrap().path();
                 let name = plugpath.file_name().unwrap().to_str().unwrap().to_string();
+
+                if !config.contains_key(&name) {
+                    continue;
+                }
 
                 let language = detect_language(get_files_list(&plugpath));
                 println!("Found plugin: {} with language: {:?}", name, language);
@@ -181,7 +189,7 @@ fn load_python_plugin(name: &str, manifest: &mut PluginManifest) -> Result<(), P
     let entrypoint_path = format!("{}/{}/main.py", &plugins_dirname, name);
     let path_to_main = Path::new(&entrypoint_path);
 
-    if path_to_main.exists(){ 
+    if path_to_main.exists(){
         match fs::read_to_string(&path_to_main) {
             Ok(code) => {
                 Python::with_gil(|py| {
@@ -208,7 +216,7 @@ fn load_python_plugin(name: &str, manifest: &mut PluginManifest) -> Result<(), P
         println!("No main.py found in plugin: {}", name);
         return Err(PluginLoadError::StructureError);
     }
-    
+
     return Ok(());
 
 }
@@ -222,7 +230,7 @@ fn load_rust_plugin(name: &str, manifest: &mut PluginManifest) {
         .expect("load library");
     let interface: libloading::Symbol<extern "Rust" fn() -> CallablePlugin> = unsafe { lib.get(b"new_service") }
     .expect("load symbol");
-    
+
     manifest.register(name.to_string(), interface() as CallablePlugin);
 }
 
