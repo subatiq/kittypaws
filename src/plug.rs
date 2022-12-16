@@ -87,14 +87,13 @@ impl FromConfig<Frequency> for Frequency {
 
 impl PluginsRunner {
     fn run_plugin(&self, name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
-        let self_copy = Arc::new(Mutex::new(plugin)).clone();
         let frequency = Frequency::from_config(&config).expect("Frequency is properly configured");
         return thread::spawn(move || {
             loop {
                 let _l = STDOUT_MUTEX.lock().unwrap();
                 let mut buf = BufferRedirect::stdout().unwrap();
 
-                self_copy.lock().unwrap().run(&config);
+                plugin.run(&config);
 
                 let mut output = String::new();
                 buf.read_to_string(&mut output).unwrap();
