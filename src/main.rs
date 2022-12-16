@@ -1,5 +1,7 @@
 mod plug;
 mod settings;
+mod stdout_styling;
+
 use settings::load_config;
 use plug::*;
 

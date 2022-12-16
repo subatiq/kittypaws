@@ -9,10 +9,12 @@ use std::collections::HashMap;
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
 use pyo3::types::{PyModule, PyList};
+use crate::settings::PluginsConfig;
+
 
 const PLUGINS_PATH: &str = "~/.kittypaws/plugins";
 type CallablePlugin = Box<dyn PluginInterface + Send + Sync + 'static>;
-type PluginConfig = HashMap<String, HashMap<String, String>>;
+
 
 #[derive(Debug)]
 pub enum PluginLanguage {
@@ -47,7 +49,7 @@ pub struct PluginManifest {
 
 
 impl PluginManifest {
-    pub fn load_plugins(config: &PluginConfig) -> PluginManifest {
+    pub fn load_plugins(config: &PluginsConfig) -> PluginManifest {
         let mut manifest = PluginManifest {
             plugins: HashMap::new()
         };
@@ -66,23 +68,20 @@ impl PluginManifest {
         })
     }
 
-    pub fn run(&mut self, config: &HashMap<String, HashMap<String, String>>) {
+    pub fn run(&mut self, config: &PluginsConfig) {
         let mut handles: Vec<JoinHandle<()>> = Vec::new();
-        let keys = self.plugins.keys().into_iter().map(|x| x.to_string()).collect::<Vec<String>>();
 
-        for name in keys {
-            match config.get(&name) {
-                Some(plugconfig) => {
-                    dbg!(&plugconfig);
-                    let plugin = self.plugins.remove(&name).unwrap();
-                    let plugconfig = plugconfig.clone();
-                    let thread = self.run_plugin(plugin, plugconfig);
-                    handles.push(thread);
-                },
-                None => {
-                    dbg!(name);
-                }
-            }
+        for plugconf in config {
+            let name = plugconf.keys().last().unwrap();
+            let plugconfig = plugconf.get(name).unwrap();
+
+            dbg!(&plugconfig);
+            let plugin = self.plugins.remove(name).unwrap();
+            let plugconfig = plugconfig.clone();
+
+            let thread = self.run_plugin(plugin, plugconfig);
+
+            handles.push(thread);
         }
 
         for handle in handles {
@@ -131,24 +130,22 @@ fn detect_language(internal_files: Vec<String>) -> PluginLanguage {
 }
 
 
-pub fn get_plug_list(config: &PluginConfig) -> Vec<Plugin> {
+pub fn get_plug_list(config: &PluginsConfig) -> Vec<Plugin> {
     let mut plugins = Vec::new();
     let path = unwrap_home_path(PLUGINS_PATH);
 
     match fs::read_dir(&path) {
-        Ok(paths) =>
-            for path in paths {
-                let plugpath = path.unwrap().path();
+        Ok(paths) => {
+            let pluglist = config.iter().map(|x| x.keys().last().unwrap());
+            for plugname in pluglist {
+                let plugpath = path.join(&plugname);
                 let name = plugpath.file_name().unwrap().to_str().unwrap().to_string();
-
-                if !config.contains_key(&name) {
-                    continue;
-                }
 
                 let language = detect_language(get_files_list(&plugpath));
                 println!("Found plugin: {} with language: {:?}", name, language);
                 plugins.push(Plugin { name, language });
-            },
+            }
+        }
         Err(_) => {
             println!("No plugins found: No such directory: {:?}", &path);
             std::process::exit(1);

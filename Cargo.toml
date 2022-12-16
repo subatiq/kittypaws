@@ -18,3 +18,5 @@ members = [
 libloading = "0.5"
 config = "0.13.1"
 pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
+gag = "1.0.0"
+lazy_static = "1.4.0"

@@ -1,5 +1,5 @@
-dumbman:
-  x: x
-
-doodoo:
-  y: y
+plugins:
+- dumbman:
+    x: x
+- doodoo:
+    y: y
