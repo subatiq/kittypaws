@@ -69,14 +69,15 @@ impl FromConfig<Frequency> for Frequency {
             "random" => {
                 let min_interval = config.get("min_interval").expect("Config has min_interval");
                 let max_interval = config.get("max_interval").expect("Config has max_interval");
-                if min_interval > max_interval {
-                    return Err(format!("min_interval {} should be less or equal than max_interval {}", min_interval, max_interval));
+                let min_duration = ISODuration::parse(min_interval).expect("min_interval has ISO8601 format").to_std();
+                let max_duration = ISODuration::parse(max_interval).expect("min_interval has ISO8601 format").to_std();
+
+                if min_duration > max_duration {
+                    return Err(format!("min_interval {} should be less or equal than max_interval {}", &min_interval, &min_interval));
                 }
 
-                let min_interval = ISODuration::parse(min_interval).expect("min_interval has ISO8601 format").to_std();
-                let max_interval = ISODuration::parse(max_interval).expect("min_interval has ISO8601 format").to_std();
 
-                Ok(Frequency::Random(min_interval..max_interval))
+                Ok(Frequency::Random(min_duration..max_duration))
             }
             _ => Ok(Frequency::Once)
         }
