@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::collections::HashMap;
 use std::ops::{Range, Sub};
-use chrono::{DateTime, Utc}; // 0.4.15
+use chrono::{DateTime, Utc};
 use std::time::SystemTime;
 
 use lazy_static::lazy_static;
@@ -34,7 +34,7 @@ fn get_current_iso_time() -> String {
     let now: DateTime<Utc> = now.into();
     let now = now.to_rfc3339();
 
-    format!("{}", now)
+    format!("{}", now.split_once(".").unwrap().0)
 }
 
 fn get_datetime_format() -> String {
