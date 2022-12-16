@@ -10,6 +10,6 @@ fn main() {
     // get config path from args
     let config_path = std::env::args().nth(1).or(Some("config.yml".to_string())).unwrap();
     let config = load_config(&config_path);
-    let mut manifest = PluginManifest::load_plugins(&config);
+    let mut manifest = PluginsRunner{};
     manifest.run(&config);
 }

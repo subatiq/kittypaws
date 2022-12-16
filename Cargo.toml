@@ -9,14 +9,12 @@ edition = "2021"
 name = "paws"
 path = "src/main.rs"
 
-[workspace]
-members = [
-    "plugins/deathloop",
-]
-
 [dependencies]
 libloading = "0.5"
 config = "0.13.1"
 pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
 gag = "1.0.0"
 lazy_static = "1.4.0"
+iso8601-duration = "0.1.0"
+rand = "0.8.5"
+chrono = "0.4.23"

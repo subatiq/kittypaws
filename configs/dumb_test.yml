@@ -1,5 +1,7 @@
 plugins:
 - dumbman:
-    x: x
+    frequency: fixed
+    interval: PT5S
 - doodoo:
-    y: y
+    frequency: fixed
+    interval: PT4S
