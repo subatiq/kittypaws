@@ -6,7 +6,7 @@ use rand::*;
 use std::thread::JoinHandle;
 use std::thread;
 use std::sync::{Arc, Mutex};
-use std::fmt;
+use std::fmt::{self, format};
 use std::error;
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -70,7 +70,7 @@ impl FromConfig<Frequency> for Frequency {
                 let min_interval = config.get("min_interval").expect("Config has min_interval");
                 let max_interval = config.get("max_interval").expect("Config has max_interval");
                 if min_interval > max_interval {
-                    return Err("min_interval should be less or equal than interval".to_string());
+                    return Err(format!("min_interval {} should be less or equal than max_interval {}", min_interval, max_interval));
                 }
 
                 let min_interval = ISODuration::parse(min_interval).expect("min_interval has ISO8601 format").to_std();
