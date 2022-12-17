@@ -5,9 +5,7 @@ use std::ops::Range;
 use rand::*;
 use std::thread::JoinHandle;
 use std::thread;
-use std::sync::{Arc, Mutex};
-use std::fmt::{self, format};
-use std::error;
+use std::sync::Mutex;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -32,7 +30,7 @@ pub enum PluginLanguage {
 }
 
 pub trait PluginInterface {
-    fn run(&self, config: &HashMap<String, String>);
+    fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
 }
 
 
@@ -91,12 +89,15 @@ impl PluginsRunner {
         return thread::spawn(move || {
             loop {
                 let _l = STDOUT_MUTEX.lock().unwrap();
-                let mut buf = BufferRedirect::stdout().unwrap();
+                let mut buf = BufferRedirect::stdout().expect(&format!("Can't redirect STDOUT of {} plugin", name));
 
-                plugin.run(&config);
+                match plugin.run(&config) {
+                    Err(err) => panic!("Error while running plugin {}: {}", name, err),
+                    _ => {}
+                }
 
                 let mut output = String::new();
-                buf.read_to_string(&mut output).unwrap();
+                buf.read_to_string(&mut output).expect(&format!("Problem reading stdout of {} plugin", name));
 
                 drop(buf);
                 let output = style_line(name.to_string(), output);
@@ -121,8 +122,8 @@ impl PluginsRunner {
         let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
         for plugconf in config {
-            let name = plugconf.keys().last().unwrap();
-            let plugconfig = plugconf.get(name).unwrap();
+            let name = plugconf.keys().last().expect("Name of the plugin is not specified properly in the config");
+            let plugconfig = plugconf.get(name).expect(&format!("Can't parse config for plugin {}", &name));
 
             if let Ok(plugin) = load_plugin(&name) {
                 let plugconfig = plugconfig.clone();
@@ -135,10 +136,10 @@ impl PluginsRunner {
 
         for handle in handles {
             match handle.join() {
-                Ok(_) => {},
                 Err(e) => {
                     println!("Error: {:?}", e);
-                }
+                },
+                _ => {}
             }
         }
     }
@@ -168,31 +169,8 @@ fn detect_language(_: &str) -> PluginLanguage {
 }
 
 
-#[derive(Debug)]
-pub enum PluginLoadError {
-    StructureError,
-}
-
-impl fmt::Display for PluginLoadError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            PluginLoadError::StructureError => write!(f, "Plugin structure error"),
-        }
-    }
-}
-
-impl error::Error for PluginLoadError {
-    fn description(&self) -> &str {
-        match *self {
-            PluginLoadError::StructureError => "Plugin structure error",
-        }
-    }
-}
-
-
-fn load_plugin(name: &str) -> Result<CallablePlugin, PluginLoadError> {
+fn load_plugin(name: &str) -> Result<CallablePlugin, String> {
     match detect_language(name) {
         PluginLanguage::PYTHON => load_py_plugin(&name)
     }
-
 }
