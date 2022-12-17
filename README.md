@@ -22,36 +22,66 @@ paws config.yml
 
 ## Plugins
 
-### Deathloop
+### How to write a new plugin
 
-Restart target container at certain intervals
+Plugins are stored in `~/.kittypaws/plugins/` each in a folder named after plugin. Inside the folder there should be `main.py` with the `run` function:
 
-Config example: 
-```yaml
-deathloop: 
-  target: container_name
-  frequency: random
-  interval: PT1M
-  min_interval: PT30S
+```python
+def run(config: Dict[str, str]) -> None:
+   pass
 ```
 
-`frequency` can be 
-- `random` - waits for random between `interval` and `min_interval`, 
-- `fixed` - waits for `interval`, 
-- `once` - just quits after one restart. 
+Kittypaws will load it if plugin name is in the config and run with specified frequency.
 
-Time durations comply with ISO 8601.
+### Configuration structure
 
-### Dropper
+```yaml
+plugins:
+- plugin01:
+    config01: yes
+    config02: 42
+    ...
+    
+- plugin01:
+    config03: yes
+    config02: 44
+    ...
+```
 
-Drop connection to certain IP addresses
+### Interval configuration
+
+Time durations in config comply with ISO 8601.
+Plugins can run in different intervals or once. To let kitty know how often you want them to run add this to plugin config:
+
+#### Random intervals
 
 Config example: 
 ```yaml
-dropper: 
-  target: container_name
-  ip: X.X.X.X
-  available_seconds: 15
-  unavailable_seconds: 10
+- <plugin_name>: 
+    ...
+    frequency: random
+    max_interval: PT1M
+    min_interval: PT30S
+```
+
+#### Fixed intervals
+
+Config example: 
+```yaml
+- <plugin_name>: 
+    ...
+    frequency: fixed
+    interval: PT1M
+```
+
+#### Run once
+
+Used as default
+
+Config example: 
+```yaml
+- <plugin_name>: 
+    ...
+    frequency: once # or do not put it in config at all, it's default
 ```
 
