@@ -1,9 +1,9 @@
 use config::Config;
 use std::collections::HashMap;
 
-pub type PluginConfig = HashMap<String, HashMap<String, String>>;
+pub type PluginsConfig = Vec<HashMap<String, HashMap<String, String>>>;
 
-pub fn load_config(path: &str) -> PluginConfig {
+pub fn load_config(path: &str) -> PluginsConfig {
     let settings = Config::builder()
         // Add in `./Settings.toml`
         .add_source(config::File::with_name(path))
@@ -13,8 +13,10 @@ pub fn load_config(path: &str) -> PluginConfig {
         .build()
         .unwrap();
 
-    // Print out our settings (as a HashMap)
     return settings
-        .try_deserialize::<PluginConfig>()
+        .try_deserialize::<HashMap<String, PluginsConfig>>()
         .unwrap()
+        .get("plugins")
+        .expect("Plugins config found")
+        .to_vec();
 }
