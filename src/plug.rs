@@ -125,11 +125,14 @@ impl PluginsRunner {
             let name = plugconf.keys().last().expect("Name of the plugin is not specified properly in the config");
             let plugconfig = plugconf.get(name).expect(&format!("Can't parse config for plugin {}", &name));
 
-            if let Ok(plugin) = load_plugin(&name) {
-                let plugconfig = plugconfig.clone();
-                let thread = self.run_plugin(name.to_string(), plugin, plugconfig);
+            match load_plugin(&name) {
+                Ok(plugin) => {
+                    let plugconfig = plugconfig.clone();
+                    let thread = self.run_plugin(name.to_string(), plugin, plugconfig);
 
-                handles.push(thread);
+                    handles.push(thread);
+                }
+                Err(err) => println!("! WARNING: {}", err)
             }
         }
 

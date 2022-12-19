@@ -27,7 +27,7 @@ pub fn load(name: &str) -> Result<CallablePlugin, String> {
 
     if !path_to_main.exists() {
         println!();
-        return Err(format!("No main.py found in plugin: {}", name));
+        return Err(format!("No main.py found for plugin: {}", name));
     }
     match fs::read_to_string(&path_to_main) {
         Ok(code) => {
