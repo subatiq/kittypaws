@@ -3,6 +3,11 @@ use std::collections::HashMap;
 
 pub type PluginsConfig = Vec<HashMap<String, HashMap<String, String>>>;
 
+pub trait FromConfig<T> {
+    fn from_config(config: &HashMap<String, String>) -> Result<T, String>;
+}
+
+
 pub fn load_config(path: &str) -> PluginsConfig {
     let settings = Config::builder()
         // Add in `./Settings.toml`
