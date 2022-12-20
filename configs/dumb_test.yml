@@ -1,6 +1,7 @@
 plugins:
 - dumbman:
     frequency: fixed
+    startup: hot
     interval: PT5S
 - doodoo:
     frequency: fixed

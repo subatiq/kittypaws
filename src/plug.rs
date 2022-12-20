@@ -114,20 +114,21 @@ impl FromConfig<Frequency> for Frequency {
 impl PluginsRunner {
     fn run_plugin(&self, name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
         let frequency = Frequency::from_config(&config).expect("Frequency is poorly configured");
-        let start_immediately = StartupMode::from_config(&config).expect("StartupMode is poorly configured");
+        let start_immediately = matches!(StartupMode::from_config(&config).expect("StartupMode is poorly configured"), StartupMode::Immediatelly);
+        let mut started = false;
+
         return thread::spawn(move || {
-            match start_immediately {
-                StartupMode::Immediatelly => {
+            loop {
+                if started || start_immediately || matches!(&frequency, Frequency::Once) {
+                    println!("{}", style_line(name.clone(), "Running...".to_string()));
                     match plugin.run(&config) {
                         Err(err) => panic!("Error while running plugin {}: {}", name, err),
                         _ => {}
                     };
-                },
-                    _ => {}
-            };
-            loop {
+                };
+
                 match &frequency {
-                    Frequency::Once => {},
+                    Frequency::Once => break,
                     Frequency::Fixed(duration) => thread::sleep(*duration),
                     Frequency::Random(range) => thread::sleep(
                         Duration::from_secs(
@@ -135,14 +136,8 @@ impl PluginsRunner {
                             .gen_range(range.start.as_secs()..range.end.as_secs())
                         )
                     )
-                }
-
-                println!("{}", style_line(name.clone(), "Running...".to_string()));
-                match plugin.run(&config) {
-                    Err(err) => panic!("Error while running plugin {}: {}", name, err),
-                    _ => {}
-                }
-
+                };
+                started = true;
             }
         })
     }
