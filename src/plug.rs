@@ -13,10 +13,8 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use std::time::Duration;
 use iso8601_duration::Duration as ISODuration;
-use gag::BufferRedirect;
 use crate::settings::PluginsConfig;
 use crate::stdout_styling::style_line;
-use std::io::Read;
 use lazy_static::lazy_static;
 
 
@@ -92,21 +90,13 @@ impl PluginsRunner {
         let frequency = Frequency::from_config(&config).expect("Frequency is properly configured");
         return thread::spawn(move || {
             loop {
-                let _l = STDOUT_MUTEX.lock().unwrap();
-                let mut buf = BufferRedirect::stdout().expect(&format!("Can't redirect STDOUT of {} plugin", name));
+                println!("{}", style_line(name.clone(), "Running...".to_string()));
 
                 match plugin.run(&config) {
                     Err(err) => panic!("Error while running plugin {}: {}", name, err),
                     _ => {}
                 }
 
-                let mut output = String::new();
-                buf.read_to_string(&mut output).expect(&format!("Problem reading stdout of {} plugin", name));
-
-                drop(buf);
-                let output = style_line(name.to_string(), output);
-                drop(_l);
-                print!("{}", output);
 
                 match &frequency {
                     Frequency::Once => break,
