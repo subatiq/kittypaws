@@ -24,11 +24,25 @@ paws config.yml
 
 ### How to write a new plugin
 
-Plugins are stored in `~/.kittypaws/plugins/` each in a folder named after plugin. Inside the folder there should be `main.py` with the `run` function:
+Plugins are stored in `~/.kittypaws/plugins/` each in a folder named after plugin. 
+
+#### Python
+
+Inside the folder there should be `main.py` with the `run` function:
 
 ```python
 def run(config: Dict[str, str]) -> None:
    pass
+```
+
+#### Bash
+
+Inside the folder there should be `run.sh`:
+
+```bash
+config_field1={config_field1:-default_value}
+
+echo config_field1
 ```
 
 Kittypaws will load it if plugin name is in the config and run with specified frequency.
