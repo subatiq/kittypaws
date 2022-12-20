@@ -61,6 +61,49 @@ plugins:
     config02: 44
     ...
 ```
+### Startup configuration 
+
+Plugins can start executing their tasks immediately, or after some time. You can configure them to wait for their interval first or wait for a specific delay and then continue to work normally.
+
+#### Instant (hot) start
+
+Config example: 
+```yaml
+- <plugin_name>: 
+    ...
+    startup: hot
+```
+
+#### Wait for the interval first (cold start)
+
+Intervals configuration is described below.
+
+Config example: 
+```yaml
+- <plugin_name>: 
+    ...
+    startup: cold  # works by default
+    frequency: random
+    max_interval: PT1M
+    min_interval: PT30S
+```
+
+Here first plugin run will be executed after random interval.
+
+
+#### Delayed start
+
+Config example: 
+```yaml
+- <plugin_name>: 
+    ...
+    startup: PT5S
+    frequency: random
+    max_interval: PT1M
+    min_interval: PT30S
+```
+
+With this config plugin will start after waiting 5 seconds, then it will only wait for random intervals between runs.
 
 ### Interval configuration
 
