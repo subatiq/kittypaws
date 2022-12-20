@@ -1,5 +1,8 @@
+use std::fs;
 mod python_plugin;
+mod bash_plugin;
 use python_plugin::load as load_py_plugin;
+use bash_plugin::load as load_sh_plugin;
 
 use std::ops::Range;
 use rand::*;
@@ -26,7 +29,8 @@ lazy_static! {
 
 #[derive(Debug)]
 pub enum PluginLanguage {
-    PYTHON
+    PYTHON,
+    BASH,
 }
 
 pub trait PluginInterface {
@@ -166,14 +170,33 @@ fn unwrap_home_path(path: &str) -> PathBuf {
     }
 }
 
+fn get_files_list(path: &PathBuf) -> Vec<String> {
+        return fs::read_dir(path).unwrap()
+            .map(|x| x.unwrap()
+            .file_name()
+            .to_str().unwrap()
+            .to_string()).collect::<Vec<String>>();
+}
 
-fn detect_language(_: &str) -> PluginLanguage {
+fn get_path_to_plugin(name: &str) -> PathBuf {
+    let path_to_plugins = unwrap_home_path(PLUGINS_PATH);
+    return path_to_plugins.join(name);
+}
+
+
+fn detect_language(name: &str) -> PluginLanguage {
+    let path_to_plugin = get_path_to_plugin(&name);
+    if get_files_list(&path_to_plugin).contains(&"run.sh".to_string()) {
+        return PluginLanguage::BASH
+    }
+
     return PluginLanguage::PYTHON;
 }
 
 
 fn load_plugin(name: &str) -> Result<CallablePlugin, String> {
     match detect_language(name) {
-        PluginLanguage::PYTHON => load_py_plugin(&name)
+        PluginLanguage::PYTHON => load_py_plugin(&name),
+        PluginLanguage::BASH => load_sh_plugin(&name)
     }
 }

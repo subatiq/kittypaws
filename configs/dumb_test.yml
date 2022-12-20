@@ -5,3 +5,5 @@ plugins:
 - doodoo:
     frequency: fixed
     interval: PT4S
+- uploader:
+    who: correct
