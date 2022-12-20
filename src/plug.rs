@@ -46,9 +46,35 @@ pub enum Frequency {
     Once
 }
 
+#[derive(Debug)]
+pub enum StartupMode {
+    Immediatelly,
+    AfterInterval
+}
+
 trait FromConfig<T> {
     fn from_config(config: &HashMap<String, String>) -> Result<T, String>;
 }
+
+
+impl FromConfig<StartupMode> for StartupMode {
+    fn from_config(config: &HashMap<String, String>) -> Result<StartupMode, String> {
+        if !config.contains_key("startup") {
+            return Ok(StartupMode::AfterInterval);
+        }
+
+        match config.get("startup").unwrap().to_lowercase().as_str() {
+            "hot" => Ok(StartupMode::Immediatelly),
+            "cold" => Ok(StartupMode::AfterInterval),
+            _ => {
+                println!("! Valid values for startup field are hot or cold");
+                return Ok(StartupMode::AfterInterval)
+            }
+        }
+
+    }
+}
+
 
 impl FromConfig<Frequency> for Frequency {
     fn from_config(config: &HashMap<String, String>) -> Result<Frequency, String> {
@@ -87,19 +113,21 @@ impl FromConfig<Frequency> for Frequency {
 
 impl PluginsRunner {
     fn run_plugin(&self, name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
-        let frequency = Frequency::from_config(&config).expect("Frequency is properly configured");
+        let frequency = Frequency::from_config(&config).expect("Frequency is poorly configured");
+        let start_immediately = StartupMode::from_config(&config).expect("StartupMode is poorly configured");
         return thread::spawn(move || {
-            loop {
-                println!("{}", style_line(name.clone(), "Running...".to_string()));
-
-                match plugin.run(&config) {
-                    Err(err) => panic!("Error while running plugin {}: {}", name, err),
+            match start_immediately {
+                StartupMode::Immediatelly => {
+                    match plugin.run(&config) {
+                        Err(err) => panic!("Error while running plugin {}: {}", name, err),
+                        _ => {}
+                    };
+                },
                     _ => {}
-                }
-
-
+            };
+            loop {
                 match &frequency {
-                    Frequency::Once => break,
+                    Frequency::Once => {},
                     Frequency::Fixed(duration) => thread::sleep(*duration),
                     Frequency::Random(range) => thread::sleep(
                         Duration::from_secs(
@@ -108,6 +136,13 @@ impl PluginsRunner {
                         )
                     )
                 }
+
+                println!("{}", style_line(name.clone(), "Running...".to_string()));
+                match plugin.run(&config) {
+                    Err(err) => panic!("Error while running plugin {}: {}", name, err),
+                    _ => {}
+                }
+
             }
         })
     }
