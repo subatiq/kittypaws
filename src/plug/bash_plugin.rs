@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::path::{Path,PathBuf};
 use std::collections::HashMap;
 use crate::plug::{unwrap_home_path, PluginInterface, CallablePlugin, PLUGINS_PATH};
@@ -12,15 +12,16 @@ struct BashCommand {
 impl PluginInterface for BashCommand {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
         // get a string of args and values from hashmap
-        let output = Command::new("bash")
+        Command::new("bash")
              .envs(config)
              .arg("-C")
              .arg(self.executable.to_str().unwrap())
              // .args(&args)
-             .output()
+             .stderr(Stdio::piped())
+             .stdout(Stdio::piped())
+             .spawn()
              .expect("failed to execute process {}");
 
-        println!("{}", String::from_utf8(output.stdout).unwrap());
         Ok(())
     }
 }
