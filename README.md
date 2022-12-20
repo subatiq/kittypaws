@@ -40,7 +40,7 @@ def run(config: Dict[str, str]) -> None:
 Inside the folder there should be `run.sh`:
 
 ```bash
-config_field1={config_field1:-default_value}
+config_field1=${config_field1:-default_value}
 
 echo config_field1
 ```
