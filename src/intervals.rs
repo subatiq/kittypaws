@@ -70,9 +70,12 @@ fn get_wait_time(frequency: &Frequency) -> Option<Duration> {
 
 }
 
-pub fn wait_for_next_run(frequency: &Frequency) {
+pub fn wait_for_next_run(frequency: &Frequency) -> Option<Duration> {
     match get_wait_time(&frequency) {
-        Some(duration) => wait_duration(duration),
-        None => {}
+        Some(duration) => {
+            wait_duration(duration);
+            Some(duration)
+        },
+        None => None
     }
 }

@@ -79,12 +79,17 @@ fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<Strin
         match startup {
             StartupMode::Delayed(delay) => wait_duration(delay),
             StartupMode::Immediatelly => {}
-            StartupMode::AfterInterval => wait_for_next_run(&run_frequency)
-        }
+            StartupMode::AfterInterval => {
+                wait_for_next_run(&run_frequency);
+            }
+        };
 
         loop {
             call_plugin(&name, &plugin, &config);
-            wait_for_next_run(&run_frequency);
+            match wait_for_next_run(&run_frequency) {
+                None => break,
+                _ => {}
+            }
         }
     })
 }
@@ -137,11 +142,12 @@ fn unwrap_home_path(path: &str) -> PathBuf {
 }
 
 fn get_files_list(path: &PathBuf) -> Vec<String> {
-        return fs::read_dir(path).unwrap()
-            .map(|x| x.unwrap()
-            .file_name()
-            .to_str().unwrap()
-            .to_string()).collect::<Vec<String>>();
+    dbg!(path);
+    return fs::read_dir(path).unwrap()
+        .map(|x| x.unwrap()
+        .file_name()
+        .to_str().unwrap()
+        .to_string()).collect::<Vec<String>>();
 }
 
 fn get_path_to_plugin(name: &str) -> PathBuf {
