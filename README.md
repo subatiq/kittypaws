@@ -3,10 +3,7 @@ A tool for simulating destructive behavior of production infrastructure
 
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
 
-*HEAVY WIP MODE*
-
-*DO NOT GO PASS THAT TEXT*
-
+WIP mode. Yet works for a few months already in our company (doesn't mean it's stable).
 
 ## Usage
 
@@ -142,3 +139,8 @@ Config example:
     frequency: once # or do not put it in config at all, it's default
 ```
 
+---
+
+Go get these bugs, Tiger!
+
+![](https://cdn.discordapp.com/attachments/694259726619246674/1065994810210652180/image.png)
