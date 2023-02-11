@@ -53,7 +53,7 @@ https://github.com/subatiq/kittypaws-dropper
 
 #### Deathloop
 Simply restarts target container\
-https://github.com/subatiq/kittypaws-dropper
+https://github.com/subatiq/kittypaws-deathloop
 
 #### Time burglar
 Breaks time sync on the host\
