@@ -3,7 +3,7 @@ A tool for simulating destructive behavior of production infrastructure
 
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
 
-WIP mode. Yet works for a few months already in our company (doesn't mean it's stable).
+WIP mode. Yet works for a few months in our company (doesn't mean it's stable).
 
 ## Usage
 
