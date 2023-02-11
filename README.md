@@ -44,6 +44,22 @@ echo config_field1
 
 Kittypaws will load it if plugin name is in the config and run with specified frequency.
 
+### Known plugins
+
+
+#### Dropper
+Drops connection to a certain IP address\
+https://github.com/subatiq/kittypaws-dropper
+
+#### Deathloop
+Simply restarts target container\
+https://github.com/subatiq/kittypaws-dropper
+
+#### Time burglar
+Breaks time sync on the host\
+https://github.com/subatiq/kittypaws-timeburglar
+
+
 ### Configuration structure
 
 ```yaml
@@ -138,6 +154,7 @@ Config example:
     ...
     frequency: once # or do not put it in config at all, it's default
 ```
+
 
 ---
 
