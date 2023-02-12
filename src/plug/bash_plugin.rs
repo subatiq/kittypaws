@@ -9,14 +9,18 @@ struct BashCommand {
     executable: PathBuf,
 }
 
-fn get_process_status(child: &mut Child) -> Option<Result<i32, String>> {
-    // Checks the exit code of a process, and returns None if it is still running.
-    // If there is an error, it returns the error
+enum ProcessStatus {
+    Running,
+    Finished(i32),
+}
+
+
+fn get_process_status(child: &mut Child) -> ProcessStatus {
     match child.try_wait() {
         // -1 === process was killed by a signal
-        Ok(Some(status)) => Some(Ok(status.code().unwrap_or(-1))),
-        Err(msg) => Some(Err(msg.to_string())),
-        Ok(None) => None,
+        Ok(Some(status)) => ProcessStatus::Finished(status.code().unwrap_or(-1)),
+        Ok(None) => ProcessStatus::Running,
+        Err(msg) => panic!("Error while trying to get process status: {}", msg),
     }
 }
 fn detect_line(bytes: &Vec<u8>) -> Option<String> {
@@ -32,6 +36,7 @@ fn log(line: &str) {
 
 fn try_get_line(stdout: &mut ChildStdout, collected: &mut Vec<u8>) -> Option<String> {
     let bytebuff: &mut [u8; 1] = &mut [0; 1];
+
     match stdout.read_exact(bytebuff) {
         Ok(_) => {
             collected.push(bytebuff[0]);
@@ -69,24 +74,27 @@ impl PluginInterface for BashCommand {
                 None => {}
             }
             status = get_process_status(&mut child);
-            if let Some(_) = status {
+            if let ProcessStatus::Finished(_) = status {
                 break;
             }
         }
-        let status = status.unwrap();
-        let result: Result<String, String> = match status {
-            Ok(code) => {
-                let msg = format!(
-                    "{} command exited with code {}",
-                    self.executable.to_str().unwrap(),
-                    code
-                );
-                match code {
-                    0 => Ok(msg),
-                    _ => Err(msg),
-                }
+
+        let exit_code = match status {
+            ProcessStatus::Finished(status) => status,
+            _ => unreachable!(),
+        };
+
+        let msg = format!(
+            "{} command exited with code {}",
+            self.executable.to_str().unwrap(),
+            exit_code
+        );
+
+        let result: Result<String, String> = {
+            match exit_code {
+                0 => Ok(msg),
+                _ => Err(msg),
             }
-            Err(msg) => Err(msg),
         };
 
         // print non-error result
