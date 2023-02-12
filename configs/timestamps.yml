@@ -1,0 +1,4 @@
+plugins:
+  - loop:
+      target: 01
+
