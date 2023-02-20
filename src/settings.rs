@@ -20,8 +20,8 @@ pub fn load_config(path: &str) -> PluginsConfig {
 
     return settings
         .try_deserialize::<HashMap<String, PluginsConfig>>()
-        .expect("Config file is valid")
+        .expect("Config file is not valid")
         .get("plugins")
-        .expect("Plugins config found")
+        .expect("Plugins config not found")
         .to_vec();
 }

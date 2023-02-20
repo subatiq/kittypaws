@@ -1,6 +1,7 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
 use chrono::Local;
 use std::collections::HashMap;
+use std::io::ErrorKind;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Command, Stdio};
@@ -14,39 +15,39 @@ enum ProcessStatus {
     Finished(i32),
 }
 
-
-fn get_process_status(child: &mut Child) -> ProcessStatus {
+fn get_process_status(child: &mut Child) -> Result<ProcessStatus, String> {
     match child.try_wait() {
         // -1 === process was killed by a signal
-        Ok(Some(status)) => ProcessStatus::Finished(status.code().unwrap_or(-1)),
-        Ok(None) => ProcessStatus::Running,
-        Err(msg) => panic!("Error while trying to get process status: {}", msg),
+        Ok(Some(status)) => Ok(ProcessStatus::Finished(status.code().unwrap_or(-1))),
+        Ok(None) => Ok(ProcessStatus::Running),
+        Err(msg) => Err(format!("{:?}", msg)),
     }
 }
 fn detect_line(bytes: &Vec<u8>) -> Option<String> {
-    if bytes.len() > 0 && bytes[bytes.len() - 1] == b'\n' {
-        return Some(String::from_utf8(bytes[..bytes.len() - 1].to_vec()).unwrap());
+    if bytes.len() <= 0 || bytes[bytes.len() - 1] != b'\n' {
+        return None;
     }
-    None
+    Some(String::from_utf8(bytes[..bytes.len() - 1].to_vec()).unwrap())
 }
 
 fn log(line: &str) {
     println!("[{}] {}", Local::now().format("%Y-%m-%d %H:%M:%S"), line);
 }
 
-fn try_get_line(stdout: &mut ChildStdout, collected: &mut Vec<u8>) -> Option<String> {
+fn try_get_line(
+    stdout: &mut ChildStdout,
+    collected: &mut Vec<u8>,
+) -> Result<Option<String>, String> {
     let bytebuff: &mut [u8; 1] = &mut [0; 1];
 
     match stdout.read_exact(bytebuff) {
-        Ok(_) => {
-            collected.push(bytebuff[0]);
-        }
-        Err(_) => {
-            // println!("Error: {}", e);
-        }
+        Ok(_) => {}
+        Err(eof) if eof.kind() == ErrorKind::UnexpectedEof => return Ok(None),
+        Err(e) => return Err(format!("{}", e)),
     }
 
-    detect_line(&collected)
+    collected.push(bytebuff[0]);
+    Ok(detect_line(&collected))
 }
 
 impl PluginInterface for BashCommand {
@@ -60,26 +61,29 @@ impl PluginInterface for BashCommand {
             // .args(&args)
             .spawn()
             .expect("failed to start process {}");
-        let mut stdout = child.stdout.take().expect("Stdout is available");
+        let mut stdout = child.stdout.take().expect("Stdout is unavailable");
 
         let mut status;
         let mut line: Vec<u8> = vec![];
 
         loop {
             match try_get_line(&mut stdout, &mut line) {
-                Some(string) => {
+                Ok(None) => {}
+                Ok(Some(string)) => {
                     log(&string);
                     line = vec![];
                 }
-                None => {}
+                Err(e) => {
+                    println!("{}", e)
+                }
             }
             status = get_process_status(&mut child);
-            if let ProcessStatus::Finished(_) = status {
+            if let Ok(ProcessStatus::Finished(_)) = status {
                 break;
             }
         }
 
-        let exit_code = match status {
+        let exit_code = match status? {
             ProcessStatus::Finished(status) => status,
             _ => unreachable!(),
         };
