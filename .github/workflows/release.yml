@@ -4,8 +4,9 @@
 name: Kittypaws Release
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "*"
 
 jobs:
   release:
