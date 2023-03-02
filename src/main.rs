@@ -2,6 +2,7 @@ mod plug;
 mod settings;
 mod stdout_styling;
 mod intervals;
+mod plugin_logger;
 
 use settings::load_config;
 use plug::start_main_loop;

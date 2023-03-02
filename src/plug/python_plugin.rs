@@ -8,10 +8,13 @@ use crate::plug::{unwrap_home_path, PluginInterface, CallablePlugin, PLUGINS_PAT
 
 
 impl PluginInterface for pyo3::Py<PyAny> {
-    fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String> {
         let mut pyconfig = HashMap::new();
         pyconfig.insert("config", &config);
-        match Python::with_gil(|py| self.call(py, (), Some(pyconfig.into_py_dict(py)))) {
+        let result = Python::with_gil(|py| {
+            self.call(py, (), Some(pyconfig.into_py_dict(py)))
+        });
+        match result {
             Ok(_) => Ok(()),
             Err(err) => Err(format!("{}", err))
         }

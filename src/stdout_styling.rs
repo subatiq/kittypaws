@@ -59,10 +59,10 @@ fn get_associated_color(plugname: &str) -> Color {
     }
 }
 
-pub fn style_line(plugname: String, message: String) -> String {
-    let name_part = get_plugname_format(&plugname);
+pub fn style_line(plugname: &str, message: &str) -> String {
+    let name_part = get_plugname_format(plugname);
     let dt_part = get_datetime_format();
     let line = format!("{}\t{}\t{}", name_part, dt_part, message);
-    let line = color_line(&line, &get_associated_color(&plugname));
+    let line = color_line(&line, &get_associated_color(plugname));
     line.to_string()
 }

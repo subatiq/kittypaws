@@ -31,7 +31,7 @@ pub enum PluginLanguage {
 }
 
 pub trait PluginInterface {
-    fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String>;
 }
 
 
@@ -64,8 +64,8 @@ impl FromConfig<StartupMode> for StartupMode {
 
 
 fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, String>) {
-    println!("{}", style_line(name.to_string(), "Running...".to_string()));
-    match plugin.run(&config) {
+    println!("{}", style_line(name, "Running..."));
+    match plugin.run(&name, &config) {
         Err(err) => panic!("Error while running plugin {}: {}", name, err),
         _ => {}
     };

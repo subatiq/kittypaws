@@ -1,92 +1,43 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
-use chrono::Local;
 use std::collections::HashMap;
-use std::io::ErrorKind;
-use std::io::Read;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdout, Command, Stdio};
+use std::process::{Command, Stdio};
+use std::sync::atomic::AtomicBool;
+use crate::stdout_styling::style_line;
+use crate::plugin_logger::PluginLogger;
 
 struct BashCommand {
     executable: PathBuf,
 }
 
-enum ProcessStatus {
-    Running,
-    Finished(i32),
-}
-
-fn get_process_status(child: &mut Child) -> Result<ProcessStatus, String> {
-    match child.try_wait() {
-        // -1 === process was killed by a signal
-        Ok(Some(status)) => Ok(ProcessStatus::Finished(status.code().unwrap_or(-1))),
-        Ok(None) => Ok(ProcessStatus::Running),
-        Err(msg) => Err(format!("{:?}", msg)),
-    }
-}
-fn detect_line(bytes: &Vec<u8>) -> Option<String> {
-    if bytes.len() <= 0 || bytes[bytes.len() - 1] != b'\n' {
-        return None;
-    }
-    Some(String::from_utf8(bytes[..bytes.len() - 1].to_vec()).unwrap())
-}
-
-fn log(line: &str) {
-    println!("[{}] {}", Local::now().format("%Y-%m-%d %H:%M:%S"), line);
-}
-
-fn try_get_line(
-    stdout: &mut ChildStdout,
-    collected: &mut Vec<u8>,
-) -> Result<Option<String>, String> {
-    let bytebuff: &mut [u8; 1] = &mut [0; 1];
-
-    match stdout.read_exact(bytebuff) {
-        Ok(_) => {}
-        Err(eof) if eof.kind() == ErrorKind::UnexpectedEof => return Ok(None),
-        Err(e) => return Err(format!("{}", e)),
-    }
-
-    collected.push(bytebuff[0]);
-    Ok(detect_line(&collected))
-}
-
 impl PluginInterface for BashCommand {
-    fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String> {
         // get a string of args and values from hashmap
         let mut child = Command::new("bash")
             .envs(config)
             .arg("-C")
             .arg(self.executable.to_str().unwrap())
             .stdout(Stdio::piped())
-            // .args(&args)
+            .stderr(Stdio::piped())
             .spawn()
             .expect("failed to start process {}");
-        let mut stdout = child.stdout.take().expect("Stdout is unavailable");
 
-        let mut status;
-        let mut line: Vec<u8> = vec![];
+        // Wrap streams into a buffered stream, then box it
+        let stdout = Box::new(BufReader::new(child.stdout.take().expect("Stdout is unavailable")));
+        let stderr = Box::new(BufReader::new(child.stderr.take().expect("Stderr is unavailable")));
 
-        loop {
-            match try_get_line(&mut stdout, &mut line) {
-                Ok(None) => {}
-                Ok(Some(string)) => {
-                    log(&string);
-                    line = vec![];
-                }
-                Err(e) => {
-                    println!("{}", e)
-                }
-            }
-            status = get_process_status(&mut child);
-            if let Ok(ProcessStatus::Finished(_)) = status {
-                break;
-            }
-        }
+        // Init logger
+        let plugin_logger = PluginLogger::new(
+            name,
+            AtomicBool::new(false),
+            vec![stdout, stderr]
+        );
 
-        let exit_code = match status? {
-            ProcessStatus::Finished(status) => status,
-            _ => unreachable!(),
-        };
+        // Run the plugin
+        let status = child.wait();
+        let exit_code = status.unwrap().code().or(Some(-1)).unwrap();
+        plugin_logger.stop();
 
         let msg = format!(
             "{} command exited with code {}",
@@ -104,7 +55,7 @@ impl PluginInterface for BashCommand {
         // print non-error result
         // return error message
         match &result {
-            Ok(msg) => println!("{}", msg),
+            Ok(msg) => println!("{}", style_line(name, &msg.to_string())),
             _ => {}
         }
         result.map(|_| ())
