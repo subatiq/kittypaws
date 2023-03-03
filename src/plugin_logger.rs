@@ -20,11 +20,10 @@ impl PluginLogger {
     /// Immediately starts reading from streams
     pub fn new(
         plug_name: &str,
-        stopper: AtomicBool,
         streams: Vec<Box<dyn BufRead + Send>>
     ) -> PluginLogger {
         let mut routines: Vec<JoinHandle<()>> = Vec::new();
-        let stopper = Arc::new(stopper);
+        let stopper = Arc::new(AtomicBool::new(false));
 
         for stream in streams {
             let name_copy = plug_name.clone().to_string();

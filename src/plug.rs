@@ -5,6 +5,7 @@ use python_plugin::load as load_py_plugin;
 use bash_plugin::load as load_sh_plugin;
 
 use std::thread::JoinHandle;
+use std::fmt::Display;
 use std::thread;
 use std::sync::Mutex;
 use std::path::PathBuf;
@@ -31,7 +32,7 @@ pub enum PluginLanguage {
 }
 
 pub trait PluginInterface {
-    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String>;
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<Box<dyn Display>, String>;
 }
 
 
@@ -66,8 +67,8 @@ impl FromConfig<StartupMode> for StartupMode {
 fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, String>) {
     println!("{}", style_line(name, "Running..."));
     match plugin.run(&name, &config) {
+        Ok(displayable) => println!("{}", style_line(name, displayable)),
         Err(err) => panic!("Error while running plugin {}: {}", name, err),
-        _ => {}
     };
 }
 

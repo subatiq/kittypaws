@@ -1,4 +1,5 @@
 use std::fs;
+use std::fmt::Display;
 use std::path::Path;
 use std::collections::HashMap;
 use pyo3::prelude::*;
@@ -8,14 +9,14 @@ use crate::plug::{unwrap_home_path, PluginInterface, CallablePlugin, PLUGINS_PAT
 
 
 impl PluginInterface for pyo3::Py<PyAny> {
-    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String> {
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<Box<dyn Display>, String> {
         let mut pyconfig = HashMap::new();
         pyconfig.insert("config", &config);
         let result = Python::with_gil(|py| {
             self.call(py, (), Some(pyconfig.into_py_dict(py)))
         });
         match result {
-            Ok(_) => Ok(()),
+            Ok(_) => Ok(Box::new(format!("{} finished execution", &name))),
             Err(err) => Err(format!("{}", err))
         }
     }

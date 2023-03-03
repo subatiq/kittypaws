@@ -1,10 +1,9 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::atomic::AtomicBool;
-use crate::stdout_styling::style_line;
 use crate::plugin_logger::PluginLogger;
 
 struct BashCommand {
@@ -12,7 +11,7 @@ struct BashCommand {
 }
 
 impl PluginInterface for BashCommand {
-    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<(), String> {
+    fn run(&self, name: &str, config: &HashMap<String, String>) -> Result<Box<dyn Display>, String> {
         // get a string of args and values from hashmap
         let mut child = Command::new("bash")
             .envs(config)
@@ -30,7 +29,6 @@ impl PluginInterface for BashCommand {
         // Init logger
         let plugin_logger = PluginLogger::new(
             name,
-            AtomicBool::new(false),
             vec![stdout, stderr]
         );
 
@@ -45,20 +43,16 @@ impl PluginInterface for BashCommand {
             exit_code
         );
 
-        let result: Result<String, String> = {
+        let result: Result<Box<dyn Display>, String> = {
             match exit_code {
-                0 => Ok(msg),
+                0 => Ok(Box::new(msg)),
                 _ => Err(msg),
             }
         };
 
         // print non-error result
         // return error message
-        match &result {
-            Ok(msg) => println!("{}", style_line(name, &msg.to_string())),
-            _ => {}
-        }
-        result.map(|_| ())
+        result
     }
 }
 

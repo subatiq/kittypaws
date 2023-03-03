@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::Mutex;
 use std::collections::HashMap;
 use std::ops::{Range, Sub};
@@ -59,7 +60,7 @@ fn get_associated_color(plugname: &str) -> Color {
     }
 }
 
-pub fn style_line(plugname: &str, message: &str) -> String {
+pub fn style_line(plugname: &str, message: impl Display) -> String {
     let name_part = get_plugname_format(plugname);
     let dt_part = get_datetime_format();
     let line = format!("{}\t{}\t{}", name_part, dt_part, message);
