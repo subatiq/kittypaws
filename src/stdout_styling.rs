@@ -1,8 +1,8 @@
-use std::fmt::Display;
-use std::sync::Mutex;
-use std::collections::HashMap;
-use std::ops::{Range, Sub};
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
+use std::fmt::Display;
+use std::ops::{Range, Sub};
+use std::sync::Mutex;
 use std::time::SystemTime;
 
 use lazy_static::lazy_static;
@@ -20,8 +20,7 @@ trait Diff<T> {
 }
 
 impl<T: Sub<Output = T> + Copy> Diff<T> for Range<T> {
-    fn get_diff(&self) -> T
-    {
+    fn get_diff(&self) -> T {
         self.end - self.start
     }
 }
@@ -52,7 +51,8 @@ fn get_associated_color(plugname: &str) -> Color {
     match color_mapping.get(plugname) {
         Some(color) => color.to_string(),
         None => {
-            let ansi_code = PALETTE_RANGE.get_diff() - color_mapping.len() as u8 % PALETTE_RANGE.get_diff();
+            let ansi_code =
+                PALETTE_RANGE.get_diff() - color_mapping.len() as u8 % PALETTE_RANGE.get_diff();
             let color = format!("38;5;{}", ansi_code);
             color_mapping.insert(plugname.to_string(), color.to_string());
             color.to_string()

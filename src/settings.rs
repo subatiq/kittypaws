@@ -7,7 +7,6 @@ pub trait FromConfig<T> {
     fn from_config(config: &HashMap<String, String>) -> Result<T, String>;
 }
 
-
 pub fn load_config(path: &str) -> PluginsConfig {
     let settings = Config::builder()
         // Add in `./Settings.toml`
