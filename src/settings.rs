@@ -7,7 +7,6 @@ pub trait FromConfig<T> {
     fn from_config(config: &HashMap<String, String>) -> Result<T, String>;
 }
 
-
 pub fn load_config(path: &str) -> PluginsConfig {
     let settings = Config::builder()
         // Add in `./Settings.toml`
@@ -20,8 +19,8 @@ pub fn load_config(path: &str) -> PluginsConfig {
 
     return settings
         .try_deserialize::<HashMap<String, PluginsConfig>>()
-        .unwrap()
+        .expect("Config file is not valid")
         .get("plugins")
-        .expect("Plugins config found")
+        .expect("Plugins config not found")
         .to_vec();
 }
