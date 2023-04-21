@@ -93,6 +93,11 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
 }
 
 fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
+    let total_runs_counter = register_int_counter!(
+        format!("plugin_{}_runs_total", name),
+        format!("Number of times plugin '{}' was run", name)
+    ).unwrap();
+
     let run_frequency = Frequency::from_config(&config).expect("Frequency is poorly configured");
     let startup = StartupMode::from_config(&config).expect("StartupMode is poorly configured");
 
@@ -107,6 +112,7 @@ fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<Strin
 
         loop {
             call_plugin(&name, &plugin, &config);
+            total_runs_counter.inc();
             match wait_for_next_run(&run_frequency) {
                 None => break,
                 _ => {}
