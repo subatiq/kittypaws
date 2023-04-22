@@ -29,5 +29,14 @@ jobs:
       - uses: actions/checkout@v3
       - run: sudo scripts/env_setup.sh
       - run: docker-compose -f "docker-compose.yml" up -d --build
+      # check restarts of the client (due to network blocking)
+      - run: |
+          set -exuo pipefail
+          restarts=$(docker events --filter event=die --filter container=client --since=10m --until=0s | wc -l)
+          if [ "$restarts" -gt "5" ]; then
+            echo restarts: $restarts
+          else
+            exit 1
+          fi
       - run: python3 scripts/time-test.py
       - run: docker-compose -f "docker-compose.yml" down
