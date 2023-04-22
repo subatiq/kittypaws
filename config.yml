@@ -8,13 +8,15 @@ plugins:
 # Dropping client connection
 - dropper:
     target: client
-    ip: backend
+    ip: 10.5.0.10
     unavailable_seconds: 60
-    frequency: fixed
-    interval: PT01S
-# Dropping backend container
-- deathloop-sh:
-    target: backend
     frequency: random
-    min_interval: PT10M
-    max_interval: PT20M
+    min_interval: PT05S
+    max_interval: PT60S
+
+# Dropping node_exporter container
+- deathloop-sh:
+    target: node_exporter
+    frequency: random
+    min_interval: PT05S
+    max_interval: PT60S
