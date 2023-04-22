@@ -1,10 +1,10 @@
 plugins:
 # Disrupting host time
-#- timeburglar:
-#    shift: 1
-#    startup: hot
-#    frequency: fixed
-#    interval: PT60S
+- timeburglar:
+   shift: 100
+   startup: hot
+   frequency: fixed
+   interval: PT10S
 # Dropping camera
 - dropper:
     target: client
