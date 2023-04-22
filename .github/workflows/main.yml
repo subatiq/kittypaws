@@ -27,8 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: docker-compose -f "docker-compose.yml" up -d --build
       - run: sudo scripts/env_setup.sh
+      - run: docker-compose -f "docker-compose.yml" up -d --build
+      - run: sudo paws config.yml & disown
       # check restarts of the client (due to network blocking)
       - run: python3 scripts/time-test.py
       - run: |

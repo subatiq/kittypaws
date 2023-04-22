@@ -21,7 +21,6 @@ wget -P /root/.kittypaws/plugins/timeburglar/ https://github.com/subatiq/kittypa
 
 cargo build --release
 cp ./target/release/paws /usr/bin/
-paws config.yml & disown
 
 mkdir -p /etc/docker/
 echo -ne '{"metrics-addr" : "0.0.0.0:9323"}' > /etc/docker/daemon.json
