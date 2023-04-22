@@ -8,11 +8,11 @@ plugins:
 # Dropping client connection
 - dropper:
     target: client
-    ip: 10.5.0.10
-    unavailable_seconds: 60
+    ip: 1.1.1.1
+    unavailable_seconds: 5
     frequency: random
-    min_interval: PT05S
-    max_interval: PT60S
+    min_interval: PT02S
+    max_interval: PT10S
 
 # Dropping node_exporter container
 - deathloop-sh:

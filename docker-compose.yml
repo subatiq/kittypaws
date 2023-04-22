@@ -64,34 +64,15 @@ services:
     restart: always
     networks:
       - kittypaws
-  backend:
-    container_name: backend
-    image: networkstatic/iperf3
-    entrypoint: /bin/bash -c "/usr/bin/apt update -qqy && /usr/bin/iperf3 -s"
-    restart: always
-    cap_add:
-      - NET_ADMIN
-    networks:
-      kittypaws:
-      nettest:
-        ipv4_address: 10.5.0.10
   client:
     container_name: client
-    image: networkstatic/iperf3
-    entrypoint: /bin/bash -c "/usr/bin/apt update -qqy && /usr/bin/iperf3 -c 10.5.0.10 -tinf --connect-timeout 1000 --snd-timeout 100"
+    image: qixtand/debian-jessie-curl
+    entrypoint: /bin/bash -c "while curl http://1.1.1.1 --connect-timeout 5; do sleep 1; done"
     restart: always
     cap_add:
       - NET_ADMIN
     networks:
       kittypaws:
-      nettest:
-        ipv4_address: 10.5.0.11
 
 networks:
   kittypaws: {}
-  nettest:
-    driver: bridge
-    ipam:
-     config:
-       - subnet: 10.5.0.0/16
-         gateway: 10.5.0.1
