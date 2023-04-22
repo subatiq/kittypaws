@@ -9,9 +9,13 @@ RUN wget -P ./dropper/ https://github.com/subatiq/kittypaws-dropper/raw/master/m
 
 WORKDIR /
 
-COPY . .
+COPY src src
+COPY Cargo.lock Cargo.lock
+COPY Cargo.toml Cargo.toml
 
 RUN cargo build --release
 RUN cp ./target/release/paws /usr/bin/
+
+COPY config.yml config.yml
 
 ENTRYPOINT paws config.yml
