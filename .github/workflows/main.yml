@@ -22,32 +22,9 @@ jobs:
       - run: semgrep ci
         env:
            SEMGREP_RULES: p/default
-  release:
-    name: release
+  test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: update local toolchain
-        run: |
-          rustup update
-          rustup component add clippy
-          rustup install nightly
-      - name: toolchain info
-        run: |
-          cargo --version --verbose
-          rustc --version
-          cargo clippy --version
-      - name: lint
-        run: |
-          cd src
-          cargo fmt -- --check || true
-          cargo clippy -- -D warnings || true
-      - name: test
-        run: |
-          cd src
-          cargo check
-          cargo test --all
-      - name: build
-        run: |
-          cd src
-          cargo build --release
+      - run: docker-compose -f "docker-compose.yml" up -d --build
