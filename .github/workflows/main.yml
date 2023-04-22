@@ -40,9 +40,9 @@ jobs:
             archive: zip
     steps:
       - uses: actions/checkout@v3
-      - run: apk add --no-cache python3
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.3
+        run: apk add --no-cache python3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
