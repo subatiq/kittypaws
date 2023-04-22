@@ -17,7 +17,7 @@ services:
       - kittypaws
   node_exporter:
     container_name: node_exporter
-    image: bitnami/node-exporter:1-debian-11
+    image: prom/node-exporter:latest
     restart: always
     volumes:
       - /proc:/host/proc:ro
@@ -30,8 +30,33 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - "127.0.0.1:9100:9100"
-    cap_add:
-      - NET_ADMIN
+    networks:
+      - kittypaws
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - kittypaws
+  grafana:
+    image: grafana/grafana
+    user: root
+    depends_on:
+      - prometheus
+    ports:
+      - "127.0.0.1:3000:3000"
+    container_name: grafana
+    restart: always
     networks:
       - kittypaws
   backend:

@@ -5,7 +5,7 @@ plugins:
    startup: hot
    frequency: fixed
    interval: PT10S
-# Dropping camera
+# Dropping client connection
 - dropper:
     target: client
     ip: backend
@@ -13,9 +13,9 @@ plugins:
     frequency: random
     min_interval: PT5M
     max_interval: PT10M
-# Dropping container
+# Dropping backend container
 - deathloop-sh:
-    target: client
+    target: backend
     frequency: random
     min_interval: PT10M
     max_interval: PT20M
