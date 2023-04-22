@@ -24,6 +24,6 @@ cp ./target/release/paws /usr/bin/
 paws config.yml & disown
 
 mkdir -p /etc/docker/
-echo -ne '{"metrics-addr" : "127.0.0.1:9323"}' > /etc/docker/daemon.json
+echo -ne '{"metrics-addr" : "0.0.0.0:9323"}' > /etc/docker/daemon.json
 systemctl daemon-reload
 systemctl restart docker
