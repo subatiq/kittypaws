@@ -31,7 +31,8 @@ jobs:
       - run: docker-compose -f "docker-compose.yml" up -d --build
 
       # the delay is required for the containers to do apt update
-      - run: sleep 60 && sudo paws config.yml & disown
+      - run: sleep 60
+      - run: sudo paws config.yml & disown
 
       # check restarts of the client (due to network blocking)
       - run: python3 scripts/time-test.py
