@@ -78,7 +78,7 @@ services:
   client:
     container_name: client
     image: networkstatic/iperf3
-    entrypoint: /bin/bash -c "/usr/bin/apt update -qqy && /usr/bin/iperf3 -c 10.5.0.10 -tinf"
+    entrypoint: /bin/bash -c "/usr/bin/apt update -qqy && /usr/bin/iperf3 -c 10.5.0.10 -tinf --connect-timeout 1000"
     restart: always
     cap_add:
       - NET_ADMIN
