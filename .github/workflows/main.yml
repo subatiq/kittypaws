@@ -37,6 +37,7 @@ jobs:
       # check restarts of the client (due to network blocking)
       - run: python3 scripts/time-test.py
       - run: sleep 60
+      - sudo docker events --filter container=node_exporter --since=20m --until=0s
       - run: |
           set -exuo pipefail
           restarts=$(sudo docker events --filter event=die --filter container=node_exporter --since=20m --until=0s | wc -l)
