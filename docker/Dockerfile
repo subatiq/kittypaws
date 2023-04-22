@@ -6,7 +6,4 @@ RUN apt update -qqy && apt -y install build-essential python3-dev
 
 RUN cargo build --release
 
-
-FROM rust as runtime
-
-COPY --from=build 
+RUN cp ./target/release/paws /usr/bin/
