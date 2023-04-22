@@ -9,6 +9,8 @@ services:
     restart: always
     privileged: true
     tty: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - NET_ADMIN
     networks:
