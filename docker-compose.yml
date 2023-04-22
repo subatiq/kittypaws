@@ -66,7 +66,9 @@ services:
       - kittypaws
   client:
     container_name: client
-    image: qixtand/debian-jessie-curl
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile.client
     entrypoint: /bin/bash -c "while curl http://1.1.1.1 --connect-timeout 5; do sleep 1; done"
     restart: always
     cap_add:
