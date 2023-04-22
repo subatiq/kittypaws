@@ -14,37 +14,40 @@ jobs:
   semgrep:
     name: semgrep
     runs-on: ubuntu-latest
-
     container:
       image: returntocorp/semgrep
-
     if: (github.actor != 'dependabot[bot]')
-
     steps:
       - uses: actions/checkout@v3
       - run: semgrep ci
         env:
            SEMGREP_RULES: p/default
   release:
-    name: release ${{ matrix.target }}
+    name: release
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-gnu
-            archive: zip
-          - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
-          - target: x86_64-apple-darwin
-            archive: zip
     steps:
       - uses: actions/checkout@v3
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.3
-        run: apk add --no-cache python3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          RUSTTARGET: ${{ matrix.target }}
-          ARCHIVE_TYPES: ${{ matrix.archive }}
+      - name: update local toolchain
+        run: |
+          rustup update
+          rustup component add clippy
+          rustup install nightly
+      - name: toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+          cargo clippy --version
+      - name: lint
+        run: |
+          cd src
+          cargo fmt -- --check
+          cargo clippy -- -D warnings
+      - name: test
+        run: |
+          cd src
+          cargo check
+          cargo test --all
+      - name: build
+        run: |
+          cd src
+          cargo build --release
