@@ -1,0 +1,21 @@
+plugins:
+# Disrupting host time
+#- timeburglar:
+#    shift: 1
+#    startup: hot
+#    frequency: fixed
+#    interval: PT60S
+# Dropping camera
+- dropper:
+    target: client
+    ip: backend
+    unavailable_seconds: 60
+    frequency: random
+    min_interval: PT5M
+    max_interval: PT10M
+# Dropping container
+- deathloop-sh:
+    target: client
+    frequency: random
+    min_interval: PT10M
+    max_interval: PT20M
