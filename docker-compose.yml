@@ -12,7 +12,7 @@ services:
       - kittypaws
   node_exporter:
     container_name: node_exporter
-    image: prom/node-exporter
+    image: bitnami/node-exporter:1-debian-11
     restart: always
     volumes:
       - /proc:/host/proc:ro
@@ -30,16 +30,14 @@ services:
   backend:
     container_name: backend
     image: networkstatic/iperf3
-    entrypoint: /bin/bash
-    command: iperf3 -s
+    entrypoint: /usr/bin/iperf3 -s
     restart: always
     networks:
       - kittypaws
   client:
     container_name: client
     image: networkstatic/iperf3
-    entrypoint: /bin/bash
-    command: iperf3 -c backend
+    entrypoint: /usr/bin/iperf3 -c backend
     restart: always
     networks:
       - kittypaws
