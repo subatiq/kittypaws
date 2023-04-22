@@ -1,0 +1,22 @@
+plugins:
+# Disrupting host time
+- timeburglar:
+   shift: 100
+   startup: hot
+   frequency: fixed
+   interval: PT01S
+# Dropping client connection
+- dropper:
+    target: client
+    ip: 1.1.1.1
+    unavailable_seconds: 5
+    frequency: random
+    min_interval: PT02S
+    max_interval: PT10S
+
+# Dropping node_exporter container
+- deathloop-sh:
+    target: node_exporter
+    frequency: random
+    min_interval: PT02S
+    max_interval: PT10S

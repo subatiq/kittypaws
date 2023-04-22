@@ -1,0 +1,55 @@
+name: kittypaws
+on: [push]
+jobs:
+  scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - uses: actions/checkout@v3
+      - run: semgrep scan --config auto .
+        env:
+           SEMGREP_RULES: p/default
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: sudo scripts/env_setup.sh
+      - run: docker-compose -f "docker-compose.yml" up -d --build
+
+      # the delay is required for the containers to do apt update
+      - run: sleep 60
+      - run: sudo paws config.yml & disown
+
+      # check restarts of the client (due to network blocking)
+      - run: python3 scripts/time-test.py
+      - run: sleep 60
+      - run: |
+          set -exuo pipefail
+          restarts=$(docker events --filter event=die --filter container=node_exporter --since=20m --until=0s | wc -l)
+          if [ "$restarts" -gt "5" ]; then
+            echo restarts by deathloop: $restarts
+          else
+            echo no restarts
+          fi
+      - run: |
+          set -exuo pipefail
+          restarts=$(docker events --filter event=die --filter container=client --since=20m --until=0s | wc -l)
+          if [ "$restarts" -gt "5" ]; then
+            echo client restarts: $restarts
+          else
+            echo no restarts
+          fi

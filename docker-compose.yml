@@ -1,0 +1,63 @@
+version: '3.4'
+
+services:
+  node_exporter:
+    container_name: node_exporter
+    image: prom/node-exporter:latest
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - kittypaws
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "127.0.0.1:9090:9090"
+    extra_hosts:
+      - "host.docker.internal:172.18.0.1" # docker_gwbridge
+    networks:
+      - kittypaws
+  grafana:
+    image: grafana/grafana
+    user: root
+    depends_on:
+      - prometheus
+    ports:
+      - "127.0.0.1:3000:3000"
+    container_name: grafana
+    restart: always
+    networks:
+      - kittypaws
+  client:
+    container_name: client
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    entrypoint: /bin/bash -c "while curl http://1.1.1.1 --connect-timeout 5; do sleep 1; done"
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    networks:
+      kittypaws:
+
+networks:
+  kittypaws: {}
