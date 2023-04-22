@@ -1,6 +1,7 @@
 use std::fs;
 mod python_plugin;
 mod bash_plugin;
+use prometheus::{IntCounter, register_int_counter};
 use python_plugin::load as load_py_plugin;
 use bash_plugin::load as load_sh_plugin;
 
@@ -21,6 +22,26 @@ const PLUGINS_PATH: &str = "~/.kittypaws/plugins";
 pub type CallablePlugin = Box<dyn PluginInterface + Send + Sync + 'static>;
 lazy_static! {
     static ref STDOUT_MUTEX: Mutex<()> = Mutex::new(());
+    static ref TOTAL_PLUGINS: IntCounter = register_int_counter!(
+        "plugins_expected_total",
+        "Number of plugins that were expected to load and run"
+    ).unwrap();
+    static ref LOADED_PLUGINS: IntCounter = register_int_counter!(
+        "plugins_successfully_loaded_total",
+        "Number of plugins that were actually loaded"
+    ).unwrap();
+    static ref NOT_LOADED_PLUGINS: IntCounter = register_int_counter!(
+        "plugins_not_loaded_total",
+        "Number of plugins that failed to load"
+    ).unwrap();
+    static ref FINISHED_PLUGINS: IntCounter = register_int_counter!(
+        "plugins_successfully_finished_total",
+        "Number of plugins that successfully finished execution"
+    ).unwrap();
+    static ref FAILED_PLUGINS: IntCounter = register_int_counter!(
+        "plugins_failed_total",
+        "Number of plugins that failed and did not finish their operation"
+    ).unwrap();
 }
 
 
@@ -72,6 +93,11 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
 }
 
 fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
+    let total_runs_counter = register_int_counter!(
+        format!("plugin_{}_runs_total", name),
+        format!("Number of times plugin '{}' was run", name)
+    ).unwrap();
+
     let run_frequency = Frequency::from_config(&config).expect("Frequency is poorly configured");
     let startup = StartupMode::from_config(&config).expect("StartupMode is poorly configured");
 
@@ -86,6 +112,7 @@ fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<Strin
 
         loop {
             call_plugin(&name, &plugin, &config);
+            total_runs_counter.inc();
             match wait_for_next_run(&run_frequency) {
                 None => break,
                 _ => {}
@@ -97,6 +124,8 @@ fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<Strin
 pub fn start_main_loop(config: &PluginsConfig) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
+    TOTAL_PLUGINS.inc_by(config.len().try_into().unwrap());
+
     for plugconf in config {
         let name = plugconf.keys().last().expect("Name of the plugin is not specified properly in the config");
         let plugconfig = plugconf.get(name).expect(&format!("Can't parse config for plugin {}", &name));
@@ -107,18 +136,23 @@ pub fn start_main_loop(config: &PluginsConfig) {
                 let thread = start_plugin_loop(name.to_string(), plugin, plugconfig);
 
                 handles.push(thread);
+                LOADED_PLUGINS.inc();
             }
-            Err(err) => println!("! WARNING: {}", err)
+            Err(err) => {
+                println!("! WARNING: {}", err);
+                NOT_LOADED_PLUGINS.inc();
+            }
         }
     }
 
 
     for handle in handles {
         match handle.join() {
+            Ok(_ )=> FINISHED_PLUGINS.inc(),
             Err(e) => {
                 println!("Error: {:?}", e);
+                FINISHED_PLUGINS.inc();
             },
-            _ => {}
         }
     }
 }

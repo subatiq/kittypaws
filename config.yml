@@ -1,0 +1,13 @@
+plugins:
+# - dropper:
+#     target: break-this-container
+#     ip: 192.168.10.10
+#     unavailable_seconds: 1800
+#     frequency: random
+#     min_interval: PT3S
+#     max_interval: PT10S
+- deathloop:
+    target: break-this-container
+    frequency: random
+    min_interval: PT3S
+    max_interval: PT10S
