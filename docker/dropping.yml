@@ -1,8 +1,0 @@
-plugins:
-- dropper:
-    target: client
-    ip: backend
-    unavailable_seconds: 60
-    frequency: random
-    min_interval: PT5M
-    max_interval: PT10M

@@ -1,6 +1,0 @@
-plugins:
-- deathloop-sh:
-    target: backend
-    frequency: random
-    min_interval: PT10M
-    max_interval: PT20M

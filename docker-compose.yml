@@ -1,23 +1,6 @@
 version: '3.4'
 
 services:
-  # NOTE: running it on the host system
-  # kittypaws:
-  #   container_name: kittypaws
-  #   build:
-  #     context: ./
-  #     dockerfile: ./docker/Dockerfile
-  #   restart: always
-  #   privileged: true
-  #   tty: true
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
-  #   cap_add:
-  #     - NET_ADMIN
-  #     - SYS_TIME
-  #   networks:
-  #     - kittypaws
   node_exporter:
     container_name: node_exporter
     image: prom/node-exporter:latest
@@ -68,7 +51,7 @@ services:
     container_name: client
     build:
       context: ./
-      dockerfile: ./docker/Dockerfile.client
+      dockerfile: ./docker/Dockerfile
     entrypoint: /bin/bash -c "while curl http://1.1.1.1 --connect-timeout 5; do sleep 1; done"
     restart: always
     cap_add:
