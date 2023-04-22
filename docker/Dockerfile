@@ -1,6 +1,6 @@
 FROM rust as build
 
-RUN apt update -qqy && apt -y install build-essential python3-dev
+RUN apt update -qqy && apt -y install build-essential python3-dev sudo
 
 RUN mkdir -p /root/.kittypaws/plugins/{dropper,deathloop-sh,timeburglar}
 
