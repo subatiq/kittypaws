@@ -5,27 +5,67 @@ A tool for simulating destructive behavior of production infrastructure
 
 WIP mode. Yet works for a few months in our company (doesn't mean it's stable).
 
+## Requirements:
+You need to install the following packages:
+
+1. Rust from [official website](https://www.rust-lang.org/tools/install)
+- Don't forget to add `Cargo` to `PATH` using:
+    ```bash
+    source ~/.cargo/env
+    ```
+2. `build-essential` for C/C++ compiler support:
+    ```bash
+    apt install build-essential
+    ```
+3. `python3-dev` for Rust's Python bindings:
+
+    ```bash
+    apt install python3-dev
+    ```
+
+
 ## Usage
 
-Using cargo:
-```bash
-cargo run config.yml
-```
+1. Create the following directory (in `$HOME`):
+    `/.kittypaws/plugins/`
+2. In `plugins` folder, create folder(s) with the name(s) of the plugin(s) you wanna use.
 
-Using distributive:
-```bash
-paws config.yml
-```
+    * For example if you want to use `timeburglar`:
+
+        `~/.kittypaws/plugins/timeburglar`
+3. Copy the plugin's `main.py` or `run.sh` to the plugin name folder from the previous step
+
+4. Create a file `config.yml` in the root of this repo's folder 
+    * The content depends on the plugins used
+    * `Timeburglar` config file example:
+        ```bash
+        plugins:
+        # Disrupting host time
+        - timeburglar:
+            shift: 1
+            startup: hot
+            frequency: fixed
+            interval: PT60S
+        ```
+5. Run using `cargo`:
+    ```bash
+    cargo run config.yml
+    ```
+
+    or using distributive:
+    ```bash
+    paws config.yml
+    ```
 
 ## Plugins
 
 ### How to write a new plugin
 
-Plugins are stored in `~/.kittypaws/plugins/` each in a folder named after plugin. 
+Plugins are stored in `~/.kittypaws/plugins/{plugin_name}` with `main.py` or `run.sh` file inside
 
-#### Python
+#### Python files
 
-Inside the folder there should be `main.py` with the `run` function:
+Inside the plugin name folder, `main.py` with `run` function:
 
 ```python
 def run(config: Dict[str, str]) -> None:
@@ -34,7 +74,7 @@ def run(config: Dict[str, str]) -> None:
 
 #### Bash
 
-Inside the folder there should be `run.sh`:
+Inside the the plugin name folder, `run.sh` should contain:
 
 ```bash
 config_field1=${config_field1:-default_value}
@@ -42,7 +82,7 @@ config_field1=${config_field1:-default_value}
 echo config_field1
 ```
 
-Kittypaws will load it if plugin name is in the config and run with specified frequency.
+Kittypaws will load it if the plugin name is in the config matches the plugin folder name and will run it with the specified frequency.
 
 ### Known plugins
 
