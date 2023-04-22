@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from time import sleep
 
-CHECK_INTERVAL = 15
+CHECK_INTERVAL = 3
 CHECKS = 20
 MIN_DELTA = timedelta(seconds=5).total_seconds()
 

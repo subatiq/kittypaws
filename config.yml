@@ -4,7 +4,7 @@ plugins:
    shift: 100
    startup: hot
    frequency: fixed
-   interval: PT10S
+   interval: PT01S
 # Dropping client connection
 - dropper:
     target: client
