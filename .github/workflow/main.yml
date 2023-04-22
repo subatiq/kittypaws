@@ -1,8 +1,30 @@
-on:
-  release:
-    types: [created]
-
+name: kittypaws
+on: [push]
 jobs:
+  scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+
+    container:
+      image: returntocorp/semgrep
+
+    if: (github.actor != 'dependabot[bot]')
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: semgrep ci
+        env:
+           SEMGREP_RULES: p/default
   release:
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -17,7 +39,7 @@ jobs:
           - target: x86_64-apple-darwin
             archive: zip
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.3
         env:
