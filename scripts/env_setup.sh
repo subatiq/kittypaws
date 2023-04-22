@@ -3,7 +3,9 @@
 set -exu pipefail
 
 apt update -qqy
-apt -y install build-essential python3-dev sudo systemd systemd-timesyncd
+apt -y install build-essential python3-dev sudo systemd systemd-timesyncd rustup
+rustup install stable
+rustup default stable
 
 mkdir -p /root/.kittypaws/plugins/{dropper,deathloop-sh,timeburglar}
 
