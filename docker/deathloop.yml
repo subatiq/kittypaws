@@ -1,4 +1,4 @@
 deathloop:
-  target: node_exporter
+  target: backend
   frequency: random
   interval: PT1M
