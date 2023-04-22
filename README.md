@@ -5,7 +5,11 @@ A tool for simulating destructive behavior of production infrastructure
 
 WIP mode. Yet works for a few months in our company (doesn't mean it's stable).
 
+**Currently does not support Windows**
+
 ## Requirements:
+
+
 You need to install the following packages:
 
 1. Rust from [official website](https://www.rust-lang.org/tools/install)
