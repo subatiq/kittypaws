@@ -45,4 +45,12 @@ jobs:
           else
             exit 1
           fi
+      - run: |
+          set -exuo pipefail
+          restarts=$(docker events --filter event=die --filter container=client --since=10m --until=0s | wc -l)
+          if [ "$restarts" -gt "5" ]; then
+            echo client restarts: $restarts
+          else
+            exit 1
+          fi
       - run: docker-compose -f "docker-compose.yml" down
