@@ -1,22 +1,23 @@
 version: '3.4'
 
 services:
-  kittypaws:
-    container_name: kittypaws
-    build:
-      context: ./
-      dockerfile: ./docker/Dockerfile
-    restart: always
-    privileged: true
-    tty: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
-    cap_add:
-      - NET_ADMIN
-      - SYS_TIME
-    networks:
-      - kittypaws
+  # NOTE: running it on the host system
+  # kittypaws:
+  #   container_name: kittypaws
+  #   build:
+  #     context: ./
+  #     dockerfile: ./docker/Dockerfile
+  #   restart: always
+  #   privileged: true
+  #   tty: true
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_TIME
+  #   networks:
+  #     - kittypaws
   node_exporter:
     container_name: node_exporter
     image: prom/node-exporter:latest

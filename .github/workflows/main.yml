@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: scripts/env_setup.sh
       - run: docker-compose -f "docker-compose.yml" up -d --build
-      - run: docker ps -a
       - run: python3 scripts/time-test.py
       - run: docker-compose -f "docker-compose.yml" down
