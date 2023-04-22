@@ -39,7 +39,7 @@ jobs:
       - run: sleep 60
       - run: |
           set -exuo pipefail
-          restarts=$(docker events --filter event=die --filter container=node_exporter | wc -l)
+          restarts=$(docker events --filter event=die --filter container=node_exporter --since=20m --until=0s | wc -l)
           if [ "$restarts" -gt "5" ]; then
             echo restarts by deathloop: $restarts
           else
@@ -47,7 +47,7 @@ jobs:
           fi
       - run: |
           set -exuo pipefail
-          restarts=$(docker events --filter event=die --filter container=client | wc -l)
+          restarts=$(docker events --filter event=die --filter container=client --since=20m --until=0s | wc -l)
           if [ "$restarts" -gt "5" ]; then
             echo client restarts: $restarts
           else
