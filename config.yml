@@ -18,5 +18,5 @@ plugins:
 - deathloop-sh:
     target: node_exporter
     frequency: random
-    min_interval: PT05S
-    max_interval: PT60S
+    min_interval: PT02S
+    max_interval: PT10S
