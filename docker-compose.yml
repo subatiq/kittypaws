@@ -26,8 +26,8 @@ services:
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    expose:
-      - 9100:9100
+    ports:
+      - "127.0.0.1:9100:9100"
     cap_add:
       - NET_ADMIN
     networks:
