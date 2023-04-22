@@ -53,5 +53,4 @@ jobs:
           else
             echo no restarts
           fi
-      - run: sudo systemctl restart docker
-      - run: docker-compose -f "docker-compose.yml" down --remove-orphans
+      - run: docker-compose -f "docker-compose.yml" down || true
