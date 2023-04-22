@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  kittypaws:
+    build: .
+    ports:
+      - 9185:9185
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./config.yml:/config.yml:ro
+      - ./plugins:/root/.kittypaws/plugins
+      - /var/run/docker.sock:/var/run/docker.sock
+    mem_limit: 512m
+    mem_reservation: 512M
+    cpus: 0.1
+    entrypoint: ["/opt/app/paws", "/config.yml", "0.0.0.0:9185"]
