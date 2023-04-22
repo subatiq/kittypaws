@@ -3,7 +3,9 @@
 set -exu pipefail
 
 apt update -qqy
-apt -y install build-essential python3-dev sudo systemd systemd-timesyncd rustup
+apt -y install build-essential python3-dev sudo systemd systemd-timesyncd
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup install stable
 rustup default stable
 
