@@ -30,14 +30,14 @@ services:
   backend:
     container_name: backend
     image: networkstatic/iperf3
-    entrypoint: /usr/bin/iperf3 -s
+    entrypoint: /bin/bash -c "/usr/bin/iperf3 -s"
     restart: always
     networks:
       - kittypaws
   client:
     container_name: client
     image: networkstatic/iperf3
-    entrypoint: /usr/bin/iperf3 -c backend -tinf
+    entrypoint: /bin/bash -c "/usr/bin/iperf3 -c backend -tinf"
     restart: always
     networks:
       - kittypaws
