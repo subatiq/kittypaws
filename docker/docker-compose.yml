@@ -3,7 +3,9 @@ version: '3.4'
 services:
   kittypaws:
     container_name: kittypaws
-    build: .
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
     restart: always
     privileged: true
     networks:

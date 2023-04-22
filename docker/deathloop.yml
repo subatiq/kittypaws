@@ -1,0 +1,4 @@
+deathloop:
+  target: node_exporter
+  frequency: random
+  interval: PT1M
