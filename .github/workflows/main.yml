@@ -53,4 +53,3 @@ jobs:
           else
             echo no restarts
           fi
-      - run: docker-compose -f "docker-compose.yml" down || true
