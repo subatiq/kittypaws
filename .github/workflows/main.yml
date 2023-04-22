@@ -36,9 +36,17 @@ jobs:
 
       # check restarts of the client (due to network blocking)
       - run: python3 scripts/time-test.py
+      - run: sleep 60
       - run: |
           set -exuo pipefail
-          sleep 60
+          restarts=$(docker events --filter event=die --filter container=node_exporter --since=10m --until=0s | wc -l)
+          if [ "$restarts" -gt "5" ]; then
+            echo restarts by deathloop: $restarts
+          else
+            exit 1
+          fi
+      - run: |
+          set -exuo pipefail
           restarts=$(docker events --filter event=die --filter container=client --since=10m --until=0s | wc -l)
           if [ "$restarts" -gt "5" ]; then
             echo client restarts: $restarts
