@@ -33,6 +33,8 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - "127.0.0.1:9100:9100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - kittypaws
   prometheus:
