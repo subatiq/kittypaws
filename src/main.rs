@@ -10,8 +10,7 @@ fn main() {
     // get config path from args
     let config_path = std::env::args()
         .nth(1)
-        .or(Some("paws.yml".to_string()))
-        .unwrap();
+        .unwrap_or("paws.yml".to_string());
 
     let config = load_config(&config_path);
     start_main_loop(config)

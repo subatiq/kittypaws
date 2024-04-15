@@ -21,8 +21,8 @@ fn get_wait_time(frequency: &FrequencyOptions) -> Option<Duration> {
     }
 }
 
-pub fn wait_for_next_run(frequency: &FrequencyOptions) -> Option<Duration> {
-    match get_wait_time(&frequency) {
+pub fn time_till_next_run(frequency: &FrequencyOptions) -> Option<Duration> {
+    match get_wait_time(frequency) {
         Some(duration) => {
             wait_duration(duration);
             Some(duration)

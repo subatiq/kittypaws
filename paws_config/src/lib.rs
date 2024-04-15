@@ -69,7 +69,7 @@ impl From<String> for KittypawsConfig {
 pub fn load_config(path: &str) -> KittypawsConfig {
     let contents = std::fs::read_to_string(path).expect("Should have been able to read the file");
 
-    KittypawsConfig::try_from(contents).unwrap()
+    KittypawsConfig::from(contents)
 }
 
 #[cfg(test)]
