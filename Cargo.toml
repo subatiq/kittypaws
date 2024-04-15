@@ -1,4 +1,4 @@
-workspace = { members = ["paws_config"] }
+workspace = { members = ["paws_config", "paws_install"] }
 [package]
 name = "kittypaws"
 version = "0.1.0"
