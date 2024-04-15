@@ -6,22 +6,16 @@ use bash_plugin::load as load_sh_plugin;
 
 use std::thread::JoinHandle;
 use std::thread;
-use std::sync::Mutex;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::time::Duration;
-use iso8601_duration::Duration as ISODuration;
-use crate::settings::{PluginsConfig, FromConfig};
-use crate::intervals::{Frequency, wait_for_next_run, wait_duration};
+use paws_config::{KittypawsConfig, PluginConfig};
+use crate::intervals::{wait_for_next_run, wait_duration};
 use crate::stdout_styling::style_line;
-use lazy_static::lazy_static;
 
 
 const PLUGINS_PATH: &str = "~/.kittypaws/plugins";
 pub type CallablePlugin = Box<dyn PluginInterface + Send + Sync + 'static>;
-lazy_static! {
-    static ref STDOUT_MUTEX: Mutex<()> = Mutex::new(());
-}
 
 
 #[derive(Debug)]
@@ -43,24 +37,15 @@ pub enum StartupMode {
 }
 
 
-impl FromConfig<StartupMode> for StartupMode {
-    fn from_config(config: &HashMap<String, String>) -> Result<StartupMode, String> {
-        if !config.contains_key("startup") {
-            return Ok(StartupMode::AfterInterval);
+impl From<paws_config::StartupOptions> for StartupMode {
+    fn from(value: paws_config::StartupOptions) -> Self {
+        match value {
+            paws_config::StartupOptions::Hot => StartupMode::Immediatelly,
+            paws_config::StartupOptions::Cold => StartupMode::AfterInterval,
+            paws_config::StartupOptions::Delayed(duration) => StartupMode::Delayed(duration.as_std())
         }
-
-        match config.get("startup").unwrap().as_str() {
-            "hot" => Ok(StartupMode::Immediatelly),
-            "cold" => Ok(StartupMode::AfterInterval),
-            duration => {
-                let duration = ISODuration::parse(duration).expect("duration isn't in ISO8601 format").to_std();
-                return Ok(StartupMode::Delayed(duration));
-            }
-        }
-
     }
 }
-
 
 
 fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, String>) {
@@ -71,22 +56,21 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
     };
 }
 
-fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<String, String>) -> JoinHandle<()> {
-    let run_frequency = Frequency::from_config(&config).expect("Frequency is poorly configured");
-    let startup = StartupMode::from_config(&config).expect("StartupMode is poorly configured");
+fn start_plugin_loop(plugin: CallablePlugin, config: PluginConfig) -> JoinHandle<()> {
+    let startup = config.startup.into();
 
     return thread::spawn(move || {
         match startup {
             StartupMode::Delayed(delay) => wait_duration(delay),
             StartupMode::Immediatelly => {}
             StartupMode::AfterInterval => {
-                wait_for_next_run(&run_frequency);
+                wait_for_next_run(&config.frequency);
             }
         };
 
         loop {
-            call_plugin(&name, &plugin, &config);
-            match wait_for_next_run(&run_frequency) {
+            call_plugin(&config.name, &plugin, &config.options.clone().unwrap_or(HashMap::new()));
+            match wait_for_next_run(&config.frequency) {
                 None => break,
                 _ => {}
             }
@@ -94,17 +78,13 @@ fn start_plugin_loop(name: String, plugin: CallablePlugin, config: HashMap<Strin
     })
 }
 
-pub fn start_main_loop(config: &PluginsConfig) {
+pub fn start_main_loop(config: KittypawsConfig) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
-    for plugconf in config {
-        let name = plugconf.keys().last().expect("Name of the plugin is not specified properly in the config");
-        let plugconfig = plugconf.get(name).expect(&format!("Can't parse config for plugin {}", &name));
-
-        match load_plugin(&name) {
+    for plugconf in config.plugins {
+        match load_plugin(&plugconf.name) {
             Ok(plugin) => {
-                let plugconfig = plugconfig.clone();
-                let thread = start_plugin_loop(name.to_string(), plugin, plugconfig);
+                let thread = start_plugin_loop(plugin, plugconf);
 
                 handles.push(thread);
             }
