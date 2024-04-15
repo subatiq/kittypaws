@@ -1,10 +1,12 @@
 plugins:
-- dumbman:
-    frequency: fixed
-    startup: PT10S
-    interval: PT5S
-- doodoo:
-    frequency: fixed
-    interval: PT4S
-- uploader:
-    who: correct
+- name: dumbman
+  frequency: PT5S
+  startup: PT5S
+- name: doodoo
+  frequency: once
+  startup: hot
+- name: uploader
+  frequency:
+    min: PT20S
+    max: PT1M
+  startup: hot

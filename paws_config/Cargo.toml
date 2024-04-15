@@ -1,22 +1,12 @@
-workspace = { members = ["paws_config"] }
 [package]
-name = "kittypaws"
+name = "paws_config"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[bin]]
-name = "paws"
-path = "src/main.rs"
-
 [dependencies]
-libloading = "0.5"
 pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
-gag = "1.0.0"
-paws_config = { path = "paws_config" }
-rand = "0.8.5"
-chrono = "0.4.23"
+iso8601 = { version = "0.6.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_yaml = "0.9.34"
-iso8601 = { version = "0.6.1", features = ["serde"] }
