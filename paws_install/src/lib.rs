@@ -1,4 +1,10 @@
-use std::{env, fs::File, io::Write, path::{PathBuf, Components, Path, Component}, ffi::OsStr};
+use std::{
+    env,
+    ffi::OsStr,
+    fs::File,
+    io::Write,
+    path::{Component, Components, PathBuf},
+};
 
 use zip::ZipArchive;
 
@@ -20,23 +26,36 @@ pub fn remove_plugin(name: String) -> Result<(), Box<dyn std::error::Error>> {
     println!("Removing {}...", name);
 
     std::fs::remove_dir_all(get_plugin_path(&name))?;
-
     println!("Plugin {} removed!", name);
     Ok(())
 }
 
-pub fn list_plugins() -> Result<(), Box<dyn std::error::Error>> {
+fn get_all_plugins() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let path: PathBuf = get_kittypaws_home().join("plugins");
+    if !path.exists() {
+        return Ok(vec![]);
+    }
+    let mut plugins: Vec<String> = vec![];
 
-    println!("Installed plugins:");
-
+    println!("{:?}", path);
     for path in path.read_dir().unwrap() {
-        let path = path.unwrap().path();
+        let path = path?.path();
+
         if !path.is_dir() {
             continue;
         }
 
-        println!("- {}", path.file_name().unwrap().to_str().unwrap());
+        plugins.push(path.file_name().unwrap().to_str().unwrap().to_string());
+    }
+
+    Ok(plugins)
+}
+
+pub fn list_plugins() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Installed plugins:");
+
+    for plugin in get_all_plugins()?.iter() {
+        println!("- {}", plugin);
     }
 
     Ok(())
@@ -114,9 +133,56 @@ fn unwrap_home_path(path: &str) -> String {
     }
 }
 
-#[test]
-fn test_install() {
-    //let result = install_from_github("subatiq/kittypaws-deathloop", "master");
-    //println!("{:?}", result);
-    //assert!(result.is_ok());
+#[cfg(test)]
+mod tests {
+    use std::env;
+
+    use crate::{get_kittypaws_home, get_all_plugins, install_from_github, remove_plugin};
+
+    struct TestCleanup;
+
+    impl Drop for TestCleanup {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all("./.tmp").ok();
+        }
+    }
+
+    fn setup_test() {
+        let _ = TestCleanup;
+        env::set_var("PAWS_HOME", "./.tmp");
+        std::fs::create_dir(get_kittypaws_home()).ok();
+    }
+
+    #[test]
+    fn test_install() {
+        setup_test();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        assert!(!listed_plugins.contains(&"deathloop".to_string()));
+
+        install_from_github(
+            "subatiq/kittypaws-deathloop",
+            "master",
+            Some("deathloop".to_string()),
+        )
+        .unwrap();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        dbg!(&listed_plugins);
+        assert!(listed_plugins.contains(&"deathloop".to_string()));
+    }
+
+    #[test]
+    fn test_uninstall() {
+        setup_test();
+        std::fs::create_dir_all(get_kittypaws_home().join("plugins").join("test_plugin")).unwrap();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        assert!(listed_plugins.contains(&"test_plugin".to_string()));
+
+        remove_plugin("test_plugin".to_string()).unwrap();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        assert!(!listed_plugins.contains(&"test_plugin".to_string()));
+    }
 }
