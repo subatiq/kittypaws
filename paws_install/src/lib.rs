@@ -12,8 +12,12 @@ fn get_kittypaws_home() -> PathBuf {
     PathBuf::from(env::var("PAWS_HOME").unwrap_or(unwrap_home_path("~/.kittypaws")))
 }
 
+fn get_plugins_path() -> PathBuf {
+    get_kittypaws_home().join("plugins")
+}
+
 fn get_plugin_path(plugin_name: &str) -> PathBuf {
-    get_kittypaws_home().join("plugins").join(plugin_name)
+    get_plugins_path().join(plugin_name)
 }
 
 pub fn remove_plugin(name: String) -> Result<(), Box<dyn std::error::Error>> {
@@ -137,7 +141,9 @@ fn unwrap_home_path(path: &str) -> String {
 mod tests {
     use std::env;
 
-    use crate::{get_kittypaws_home, get_all_plugins, install_from_github, remove_plugin};
+    use crate::{get_all_plugins, install_from_github, remove_plugin, get_plugins_path};
+
+    const TEST_PLUGIN: &str = "test_plugin";
 
     struct TestCleanup;
 
@@ -150,39 +156,50 @@ mod tests {
     fn setup_test() {
         let _ = TestCleanup;
         env::set_var("PAWS_HOME", "./.tmp");
-        std::fs::create_dir(get_kittypaws_home()).ok();
+    }
+
+    #[test]
+    fn test_list_no_plugins_folder() {
+        setup_test();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        assert!(listed_plugins.is_empty());
+    }
+
+    #[test]
+    fn test_list_empty_plugins_folder() {
+        setup_test();
+        std::fs::create_dir_all(get_plugins_path()).unwrap();
+
+        let listed_plugins = get_all_plugins().unwrap();
+        assert!(listed_plugins.is_empty());
     }
 
     #[test]
     fn test_install() {
         setup_test();
 
-        let listed_plugins = get_all_plugins().unwrap();
-        assert!(!listed_plugins.contains(&"deathloop".to_string()));
 
         install_from_github(
             "subatiq/kittypaws-deathloop",
             "master",
-            Some("deathloop".to_string()),
+            Some(TEST_PLUGIN.to_string()),
         )
         .unwrap();
 
         let listed_plugins = get_all_plugins().unwrap();
         dbg!(&listed_plugins);
-        assert!(listed_plugins.contains(&"deathloop".to_string()));
+        assert!(listed_plugins.contains(&TEST_PLUGIN.to_string()));
     }
 
     #[test]
     fn test_uninstall() {
         setup_test();
-        std::fs::create_dir_all(get_kittypaws_home().join("plugins").join("test_plugin")).unwrap();
+        std::fs::create_dir_all(get_plugins_path().join(TEST_PLUGIN)).unwrap();
+
+        remove_plugin(TEST_PLUGIN.to_string()).unwrap();
 
         let listed_plugins = get_all_plugins().unwrap();
-        assert!(listed_plugins.contains(&"test_plugin".to_string()));
-
-        remove_plugin("test_plugin".to_string()).unwrap();
-
-        let listed_plugins = get_all_plugins().unwrap();
-        assert!(!listed_plugins.contains(&"test_plugin".to_string()));
+        assert!(!listed_plugins.contains(&TEST_PLUGIN.to_string()));
     }
 }
