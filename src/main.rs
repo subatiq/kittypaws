@@ -3,15 +3,51 @@ mod plug;
 mod settings;
 mod stdout_styling;
 
+use paws_install::{list_plugins, install_from_github, remove_plugin};
 use plug::start_main_loop;
 use paws_config::load_config;
 
-fn main() {
-    // get config path from args
-    let config_path = std::env::args()
-        .nth(1)
-        .unwrap_or("paws.yml".to_string());
+use clap::{Parser, Subcommand};
 
-    let config = load_config(&config_path);
-    start_main_loop(config)
+const DEFAULT_CONFIG_PATH: &str = "paws.yml";
+
+#[derive(Subcommand, Debug)]
+pub enum Command {
+    Run {
+        #[arg(long = "config", default_value_t = DEFAULT_CONFIG_PATH.to_string())]
+        config: String
+    },
+
+    List,
+
+    Uninstall {
+        name: String,
+    },
+    Install {
+        name: String,
+        branch: String,
+        save_as: Option<String>,
+    },
+}
+
+#[derive(Parser, Debug)]
+#[command(version, about = "Kittypaws Destruction Executor", long_about = None)]
+pub struct CliArguments {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+
+fn main() {
+    let args = CliArguments::parse();
+
+    match args.command {
+        Command::Run { config } => {
+            let config = load_config(&config);
+            start_main_loop(config);
+        },
+        Command::List => list_plugins().unwrap(),
+        Command::Install { name, branch, save_as } => install_from_github(&name, &branch, save_as).unwrap(),
+        Command::Uninstall { name } => remove_plugin(name).unwrap(),
+    }
 }
