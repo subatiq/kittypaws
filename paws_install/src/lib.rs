@@ -163,6 +163,7 @@ mod tests {
         setup_test();
 
         let listed_plugins = get_all_plugins().unwrap();
+        dbg!(&listed_plugins);
         assert!(listed_plugins.is_empty());
     }
 
@@ -172,6 +173,7 @@ mod tests {
         std::fs::create_dir_all(get_plugins_path()).unwrap();
 
         let listed_plugins = get_all_plugins().unwrap();
+        dbg!(&listed_plugins);
         assert!(listed_plugins.is_empty());
     }
 
