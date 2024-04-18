@@ -7,7 +7,9 @@ WIP mode. Yet works for a few months in our company (doesn't mean it's stable).
 
 ## Usage
 
-Paws looks for config at `./paws.yml` path by default, but path to config can be specified after run command.
+Paws looks for config at `${PAWS_HOME}/paws.yml` path by default, but path to config can be specified after run command.
+
+By default `PAWS_HOME=~/.kittypaws`.
 
 Using cargo:
 ```bash
@@ -107,6 +109,26 @@ plugins:
   config02: 44
   ...
 ```
+
+### Run duration
+
+You can specify if the test run should stop after some time. To configure it, add 
+
+```yaml
+duration: <Duration in ISO 8601 format>
+```
+
+to the root of the config.
+
+Example:
+
+```yaml
+duration: P1D
+plugins:
+- name: example
+  ...
+```
+
 ### Startup configuration
 
 Plugins can start executing their tasks immediately, or after some time. You can configure them to wait for their interval first or wait for a specific delay and then continue to work normally.
