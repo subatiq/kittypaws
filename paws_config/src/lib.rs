@@ -8,6 +8,11 @@ impl Duration {
     pub fn as_std(&self) -> std::time::Duration {
         self.0
     }
+
+    pub fn as_chrono(&self) -> chrono::Duration {
+        chrono::Duration::from_std(self.0).unwrap()
+    }
+
 }
 
 impl<'de> Deserialize<'de> for Duration {
@@ -57,6 +62,7 @@ pub struct PluginConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct KittypawsConfig {
+    pub duration: Option<Duration>,
     pub plugins: Vec<PluginConfig>,
 }
 
