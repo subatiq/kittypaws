@@ -3,19 +3,25 @@ mod plug;
 mod settings;
 mod stdout_styling;
 
-use paws_install::{list_plugins, install_from_github, remove_plugin};
+use std::path::PathBuf;
+
+use paws_install::{list_plugins, install_from_github, remove_plugin, get_kittypaws_home};
 use plug::start_main_loop;
 use paws_config::load_config;
 
 use clap::{Parser, Subcommand};
 
-const DEFAULT_CONFIG_PATH: &str = "paws.yml";
+const DEFAULT_CONFIG_FILE_NAME: &str = "paws.yml";
+
+fn get_default_config_path() -> PathBuf {
+    get_kittypaws_home().join(DEFAULT_CONFIG_FILE_NAME)
+}
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
     Run {
-        #[arg(long = "config", default_value_t = DEFAULT_CONFIG_PATH.to_string())]
-        config: String
+        #[arg(long = "config")]
+        config: Option<PathBuf>
     },
 
     List,
@@ -43,7 +49,7 @@ fn main() {
 
     match args.command {
         Command::Run { config } => {
-            let config = load_config(&config);
+            let config = load_config(config.unwrap_or(get_default_config_path()));
             start_main_loop(config);
         },
         Command::List => list_plugins().unwrap(),

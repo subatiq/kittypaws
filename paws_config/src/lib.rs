@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 use serde::Deserialize;
 
 #[derive(Debug)]
@@ -66,7 +66,7 @@ impl From<String> for KittypawsConfig {
     }
 }
 
-pub fn load_config(path: &str) -> KittypawsConfig {
+pub fn load_config(path: PathBuf) -> KittypawsConfig {
     let contents = std::fs::read_to_string(path).expect("Should have been able to read the file");
 
     KittypawsConfig::from(contents)
@@ -74,10 +74,12 @@ pub fn load_config(path: &str) -> KittypawsConfig {
 
 #[cfg(test)]
 mod tests {
+    use std::{path::PathBuf, str::FromStr};
+
     use super::load_config;
 
     #[test]
     fn test_correct_configs_loading() {
-        load_config("../configs/dumb_test.yml");
+        load_config(PathBuf::from_str("../configs/dumb_test.yml").unwrap());
     }
 }
