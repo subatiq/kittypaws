@@ -43,6 +43,7 @@ fn get_all_plugins() -> Result<Vec<String>, Box<dyn std::error::Error>> {
 
     println!("{:?}", path);
     for path in path.read_dir().unwrap() {
+        println!("inside path {:?}", path);
         let path = path?.path();
 
         if !path.is_dir() {
@@ -141,46 +142,44 @@ fn unwrap_home_path(path: &str) -> String {
 mod tests {
     use std::env;
 
-    use crate::{get_all_plugins, install_from_github, remove_plugin, get_plugins_path};
+    use envtestkit::lock::lock_test;
+    use tempfile::{tempdir, TempDir};
+
+    use crate::{get_all_plugins, get_plugins_path, install_from_github, remove_plugin};
 
     const TEST_PLUGIN: &str = "test_plugin";
 
-    struct TestCleanup;
-
-    impl Drop for TestCleanup {
-        fn drop(&mut self) {
-            std::fs::remove_dir_all("./.tmp").ok();
-        }
-    }
-
-    fn setup_test() {
-        let _ = TestCleanup;
-        env::set_var("PAWS_HOME", "./.tmp");
+    fn setup_test() -> TempDir {
+        let tmp_dir = tempdir().unwrap();
+        env::set_var("PAWS_HOME", tmp_dir.path());
+        tmp_dir
     }
 
     #[test]
     fn test_list_no_plugins_folder() {
-        setup_test();
+        let _lock = lock_test();
+        let _path = setup_test();
 
         let listed_plugins = get_all_plugins().unwrap();
-        dbg!(&listed_plugins);
+
         assert!(listed_plugins.is_empty());
     }
 
     #[test]
     fn test_list_empty_plugins_folder() {
-        setup_test();
+        let _lock = lock_test();
+        let _path = setup_test();
         std::fs::create_dir_all(get_plugins_path()).unwrap();
 
         let listed_plugins = get_all_plugins().unwrap();
-        dbg!(&listed_plugins);
+
         assert!(listed_plugins.is_empty());
     }
 
     #[test]
     fn test_install() {
-        setup_test();
-
+        let _lock = lock_test();
+        let _path = setup_test();
 
         install_from_github(
             "subatiq/kittypaws-deathloop",
@@ -190,13 +189,14 @@ mod tests {
         .unwrap();
 
         let listed_plugins = get_all_plugins().unwrap();
-        dbg!(&listed_plugins);
+
         assert!(listed_plugins.contains(&TEST_PLUGIN.to_string()));
     }
 
     #[test]
     fn test_uninstall() {
-        setup_test();
+        let _lock = lock_test();
+        let _path = setup_test();
         std::fs::create_dir_all(get_plugins_path().join(TEST_PLUGIN)).unwrap();
 
         remove_plugin(TEST_PLUGIN.to_string()).unwrap();
