@@ -6,5 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+envtestkit = "1.1.2"
 minreq = { version = "2.11.1", features = ["rustls", "rustls-native-certs", "rustls-webpki", "https-rustls"] }
 zip = "0.6.6"
+
+[dev-dependencies]
+tempfile = "3.10.1"
