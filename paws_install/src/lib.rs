@@ -8,7 +8,7 @@ use std::{
 
 use zip::ZipArchive;
 
-fn get_kittypaws_home() -> PathBuf {
+pub fn get_kittypaws_home() -> PathBuf {
     PathBuf::from(env::var("PAWS_HOME").unwrap_or(unwrap_home_path("~/.kittypaws")))
 }
 
