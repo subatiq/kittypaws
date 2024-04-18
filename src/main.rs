@@ -3,6 +3,7 @@ mod plug;
 mod settings;
 mod stdout_styling;
 
+use paws_rest::run_rest_api;
 use paws_install::{list_plugins, install_from_github, remove_plugin};
 use plug::start_main_loop;
 use paws_config::load_config;
@@ -13,6 +14,7 @@ const DEFAULT_CONFIG_PATH: &str = "paws.yml";
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    Serve,
     Run {
         #[arg(long = "config", default_value_t = DEFAULT_CONFIG_PATH.to_string())]
         config: String
@@ -38,10 +40,12 @@ pub struct CliArguments {
 }
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = CliArguments::parse();
 
     match args.command {
+        Command::Serve => run_rest_api().await,
         Command::Run { config } => {
             let config = load_config(&config);
             start_main_loop(config);
