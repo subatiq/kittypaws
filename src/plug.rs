@@ -2,11 +2,12 @@ use std::fs;
 mod bash_plugin;
 mod python_plugin;
 use bash_plugin::load as load_sh_plugin;
+use chrono::{DateTime, Utc};
 use python_plugin::load as load_py_plugin;
 
 use crate::intervals::{time_till_next_run, wait_duration};
 use crate::stdout_styling::style_line;
-use paws_config::{KittypawsConfig, PluginConfig};
+use paws_config::{KittypawsConfig, PluginConfig, Duration as ConfigDuration};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::thread;
@@ -52,8 +53,17 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
     }
 }
 
-fn start_plugin_loop(plugin: CallablePlugin, config: PluginConfig) -> JoinHandle<()> {
+fn start_plugin_loop(
+    plugin: CallablePlugin,
+    config: PluginConfig,
+    loop_duration: &Option<ConfigDuration>,
+) -> JoinHandle<()> {
     let startup = config.startup.into();
+    let mut deadline: Option<DateTime<Utc>> = None;
+
+    if let Some(loop_duration) = loop_duration {
+        deadline = Some(Utc::now() + loop_duration.as_chrono());
+    }
 
     thread::spawn(move || {
         match startup {
@@ -73,6 +83,11 @@ fn start_plugin_loop(plugin: CallablePlugin, config: PluginConfig) -> JoinHandle
             if time_till_next_run(&config.frequency).is_none() {
                 break;
             }
+            if let Some(deadline) = deadline {
+                if Utc::now() > deadline {
+                    break;
+                }
+            }
         }
     })
 }
@@ -83,7 +98,7 @@ pub fn start_main_loop(config: KittypawsConfig) {
     for plugconf in config.plugins {
         match load_plugin(&plugconf.name) {
             Ok(plugin) => {
-                let thread = start_plugin_loop(plugin, plugconf);
+                let thread = start_plugin_loop(plugin, plugconf, &config.duration);
 
                 handles.push(thread);
             }

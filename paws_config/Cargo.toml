@@ -10,3 +10,4 @@ pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
 iso8601 = { version = "0.6.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_yaml = "0.9.34"
+chrono = "0.4.38"
