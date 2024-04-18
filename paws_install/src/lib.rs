@@ -145,16 +145,8 @@ mod tests {
 
     const TEST_PLUGIN: &str = "test_plugin";
 
-    struct TestCleanup;
-
-    impl Drop for TestCleanup {
-        fn drop(&mut self) {
-            std::fs::remove_dir_all("./.tmp").ok();
-        }
-    }
-
     fn setup_test() {
-        let _ = TestCleanup;
+        std::fs::remove_dir_all("./.tmp").ok();
         env::set_var("PAWS_HOME", "./.tmp");
     }
 
