@@ -25,6 +25,7 @@ pub enum PluginLanguage {
 
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
+    fn stop(&self, config: &HashMap<String, String>) -> Result<(), String>;
 }
 
 #[derive(Debug)]

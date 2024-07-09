@@ -20,5 +20,6 @@ paws_config = { path = "paws_config" }
 paws_install = { path = "paws_install" }
 iso8601 = { version = "0.6.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
-pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
 clap = { version = "4.5.4", features = ["derive"] }
+rustpython = { version = "0.3.1", features = ["freeze-stdlib"] }
+indexmap = "2.2.6"

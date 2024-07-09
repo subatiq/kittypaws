@@ -1,21 +1,52 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
-use pyo3::prelude::*;
-use pyo3::types::IntoPyDict;
-use pyo3::types::{PyList, PyModule};
+use indexmap::IndexMap;
+use rustpython::vm::{self, PyRef, PyObjectRef};
+use rustpython::vm::builtins::{PyStr, PyStrRef};
+use rustpython::vm::function::{IntoFuncArgs, PosArgs, KwArgs, FuncArgs, ArgMapping};
 use std::collections::HashMap;
-use std::fs;
 use std::path::Path;
 
-impl PluginInterface for pyo3::Py<PyAny> {
-    fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
-        let mut pyconfig = HashMap::new();
-        pyconfig.insert("config", &config);
+pub struct PythonPluginScript {
+    name: String,
+}
 
-        if let Err(err) = Python::with_gil(|py| self.call(py, (), Some(pyconfig.into_py_dict(py))))
-        {
-            return Err(format!("{}", err));
+struct ConfigArg(HashMap<String, String>);
+
+impl Into<KwArgs> for ConfigArg {
+    fn into(self) -> KwArgs {
+        let mut map = IndexMap::new();
+        for (key, value) in self.0 {
+            let value = PyStr::from(value);
+            map.insert(key, value);
         }
 
+        KwArgs::new(map)
+    }
+}
+
+impl PluginInterface for PythonPluginScript {
+    fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
+        let mut settings = vm::Settings::default();
+        settings.debug = true;
+        settings
+            .path_list
+            .push(unwrap_home_path(PLUGINS_PATH).join(&self.name).to_str().unwrap().to_string());
+        let interpreter = rustpython::InterpreterConfig::new()
+            .settings(settings)
+            .init_stdlib()
+            .interpreter();
+
+
+        interpreter.enter(|vm| {
+            let module = vm.import("main", 0).unwrap();
+            module.get_attr("run", vm).unwrap().call(config.into(), vm);
+
+        });
+
+        Ok(())
+    }
+
+    fn stop(&self, config: &HashMap<String, String>) -> Result<(), String> {
         Ok(())
     }
 }
@@ -33,30 +64,8 @@ pub fn load(name: &str) -> Result<CallablePlugin, String> {
         println!();
         return Err(format!("No main.py found for plugin: {}", name));
     }
-    match fs::read_to_string(path_to_main) {
-        Ok(code) => {
-            let app = Python::with_gil(|py| {
-                let syspath: &PyList = py
-                    .import("sys")
-                    .expect("Python can't import sys module. Nobody knows why")
-                    .getattr("path")
-                    .unwrap()
-                    .downcast::<PyList>()
-                    .expect("Somehow sys.path is not a valid pyhon list");
 
-                syspath
-                    .insert(0, path_to_main)
-                    .expect("Can't insert to Python path");
-
-                let app: Py<PyAny> = PyModule::from_code(py, &code, "", "")
-                    .unwrap_or_else(|_| panic!("Can't find main.py for plugin {}", name))
-                    .getattr("run")
-                    .unwrap_or_else(|_| panic!("Can't find run function in main.py for plugin {}", name))
-                    .into();
-                app
-            });
-            Ok(Box::new(app) as CallablePlugin)
-        }
-        Err(_) => Err("Could not read main.py code".to_string()),
-    }
+    Ok(Box::new(PythonPluginScript {
+        name: name.to_string(),
+    }) as CallablePlugin)
 }
