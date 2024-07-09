@@ -7,7 +7,7 @@ use python_plugin::load as load_py_plugin;
 
 use crate::intervals::{time_till_next_run, wait_duration};
 use crate::stdout_styling::style_line;
-use paws_config::{KittypawsConfig, PluginConfig, Duration as ConfigDuration};
+use paws_config::{Duration as ConfigDuration, KittypawsConfig, PluginConfig};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::thread;
@@ -23,8 +23,17 @@ pub enum PluginLanguage {
     Bash,
 }
 
+#[derive(Debug)]
+pub enum StatusValue {
+    Int(i32),
+    Float(f32),
+    String(String),
+}
+
+
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
+    fn status(&self, config: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String>;
 }
 
 #[derive(Debug)]
@@ -53,7 +62,23 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
     }
 }
 
-fn start_plugin_loop(
+fn get_status(name: &str, plugin: &CallablePlugin, config: &HashMap<String, String>) {
+    println!(
+        "{}",
+        style_line(name.to_string(), "Fetching status...".to_string())
+    );
+    match plugin.status(config) {
+        Ok(status) => {
+            println!(
+                "{}",
+                style_line(name.to_string(), format!("Status: {:?}", status))
+            );
+        }
+        Err(err) => panic!("Error while running plugin {}: {}", name, err),
+    }
+}
+
+fn start_execution_loop(
     plugin: CallablePlugin,
     config: PluginConfig,
     loop_duration: &Option<ConfigDuration>,
@@ -64,7 +89,6 @@ fn start_plugin_loop(
     if let Some(loop_duration) = loop_duration {
         deadline = Some(Utc::now() + loop_duration.as_chrono());
     }
-
     thread::spawn(move || {
         match startup {
             StartupMode::Delayed(delay) => wait_duration(delay),
@@ -92,15 +116,59 @@ fn start_plugin_loop(
     })
 }
 
+fn start_status_loop(
+    plugin: CallablePlugin,
+    config: PluginConfig,
+    loop_duration: &Option<ConfigDuration>,
+) -> Option<JoinHandle<()>> {
+    if let Some(monitoring_config) = config.monitoring {
+        let mut deadline: Option<DateTime<Utc>> = None;
+
+        if let Some(loop_duration) = loop_duration {
+            deadline = Some(Utc::now() + loop_duration.as_chrono());
+        }
+
+        return Some(thread::spawn(move || loop {
+            let status = get_status(
+                &config.name,
+                &plugin,
+                &config.options.clone().unwrap_or_default(),
+            );
+            println!("Status {:?}", status);
+            if time_till_next_run(&monitoring_config.frequency).is_none() {
+                break;
+            }
+            if let Some(deadline) = deadline {
+                if Utc::now() > deadline {
+                    break;
+                }
+            }
+        }));
+    }
+
+    None
+}
+
 pub fn start_main_loop(config: KittypawsConfig) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
     for plugconf in config.plugins {
+        // TODO: Stop this uglyness
         match load_plugin(&plugconf.name) {
             Ok(plugin) => {
-                let thread = start_plugin_loop(plugin, plugconf, &config.duration);
+                if let Some(status_thread) =
+                    start_status_loop(plugin, plugconf.clone(), &config.duration)
+                {
+                    handles.push(status_thread);
+                }
+            }
+            Err(err) => println!("! WARNING: {}", err),
+        }
+        match load_plugin(&plugconf.name) {
+            Ok(plugin) => {
+                let exec_thread = start_execution_loop(plugin, plugconf, &config.duration);
 
-                handles.push(thread);
+                handles.push(exec_thread);
             }
             Err(err) => println!("! WARNING: {}", err),
         }
