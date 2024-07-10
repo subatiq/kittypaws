@@ -1,3 +1,4 @@
+use rpassword::read_password;
 use std::{
     env,
     ffi::OsStr,
@@ -74,7 +75,25 @@ pub fn install_from_github(
     let uri = format!("https://github.com/{}/archive/{}.zip", repo_spec, branch);
 
     println!("Getting repo at {}...", uri);
-    let response = minreq::get(uri).send()?;
+    let mut response = minreq::get(&uri).send().unwrap();
+
+    if response.status_code == 404 {
+        println!("Seems like it's not a public Github repository...");
+        print!("Github Access Token: ");
+        std::io::stdout().flush().unwrap();
+        let mut request = minreq::get(&uri);
+        let token = read_password();
+        if let Ok(token) = token {
+            request = request.with_header("Authorization", format!("token {}", token));
+        }
+        response = request.send().unwrap();
+    }
+
+    if response.status_code == 404 {
+        println!("Access token is invalid or repository does not exist");
+        return Ok(());
+    }
+
     let temp_file_path = "./.tmp.zip";
 
     std::fs::remove_file(temp_file_path).ok();
