@@ -1,3 +1,4 @@
 dropper:
-  target: ev_sensor
-  ip: 192.168.85.139
+  options:
+    target: ev_sensor
+    ip: 192.168.85.139

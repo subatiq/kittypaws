@@ -100,19 +100,21 @@ https://github.com/subatiq/kittypaws-timeburglar
 ```yaml
 plugins:
 - name: plugin01
-  config01: yes
-  config02: 42
+  options:
+    config01: yes
+    config02: 42
   ...
 
 - name: plugin01:
-  config03: yes
-  config02: 44
+  options:
+    config03: yes
+    config02: 44
   ...
 ```
 
 ### Run duration
 
-You can specify if the test run should stop after some time. To configure it, add 
+You can specify if the test run should stop after some time. To configure it, add
 
 ```yaml
 duration: <Duration in ISO 8601 format>

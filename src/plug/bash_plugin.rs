@@ -24,7 +24,11 @@ impl PluginInterface for BashCommand {
              .output()
              .expect("failed to execute process {}");
 
-        println!("{}", String::from_utf8(output.stdout).unwrap());
+        #[cfg(debug_assertions)]
+        println!("Run stdout: {}", String::from_utf8(output.stdout).unwrap());
+        #[cfg(debug_assertions)]
+        println!("Run stderr: {}", String::from_utf8(output.stderr).unwrap());
+
         Ok(())
     }
 
@@ -38,6 +42,9 @@ impl PluginInterface for BashCommand {
                  // .args(&args)
                  .output()
                  .expect("failed to execute process {}");
+
+            #[cfg(debug_assertions)]
+            println!("Status stderr: {}", String::from_utf8(output.stderr).unwrap());
 
             let mut status = HashMap::new();
             for key_value in output.stdout.lines() {

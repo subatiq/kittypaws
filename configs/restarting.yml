@@ -1,4 +1,5 @@
-deathloop: 
-  target: ev_sensor
+deathloop:
+  options:
+    target: ev_sensor
   frequency: random
   interval: PT1M

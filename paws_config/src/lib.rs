@@ -1,6 +1,5 @@
 use std::{collections::HashMap, path::PathBuf};
 use serde::Deserialize;
-
 #[derive(Debug, Clone)]
 pub struct Duration(std::time::Duration);
 
@@ -67,6 +66,7 @@ pub struct PluginConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct KittypawsConfig {
+    pub monitoring_gateway: Option<String>,
     pub duration: Option<Duration>,
     pub plugins: Vec<PluginConfig>,
 }

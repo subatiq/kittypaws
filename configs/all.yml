@@ -1,7 +1,9 @@
-deathloop: 
-  target: ev_sensor
+deathloop:
   frequency: random
   interval: PT1M
+  options:
+    target: ev_sensor
 dropper:
-  target: ev_sensor
-  ip: 192.168.85.139
+  options:
+    target: ev_sensor
+    ip: 192.168.85.139
