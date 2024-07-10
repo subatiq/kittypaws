@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::mpsc::{channel, Receiver, Sender};
 mod bash_plugin;
 mod python_plugin;
 use bash_plugin::load as load_sh_plugin;
@@ -23,17 +24,9 @@ pub enum PluginLanguage {
     Bash,
 }
 
-#[derive(Debug)]
-pub enum StatusValue {
-    Int(i32),
-    Float(f32),
-    String(String),
-}
-
-
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
-    fn status(&self, config: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String>;
+    fn status(&self, config: &HashMap<String, String>) -> Result<telegraf::Point, String>;
 }
 
 #[derive(Debug)]
@@ -62,7 +55,11 @@ fn call_plugin(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Str
     }
 }
 
-fn get_status(name: &str, plugin: &CallablePlugin, config: &HashMap<String, String>) {
+fn get_status(
+    name: &str,
+    plugin: &CallablePlugin,
+    config: &HashMap<String, String>,
+) -> telegraf::Point {
     println!(
         "{}",
         style_line(name.to_string(), "Fetching status...".to_string())
@@ -73,6 +70,7 @@ fn get_status(name: &str, plugin: &CallablePlugin, config: &HashMap<String, Stri
                 "{}",
                 style_line(name.to_string(), format!("Status: {:?}", status))
             );
+            status
         }
         Err(err) => panic!("Error while running plugin {}: {}", name, err),
     }
@@ -120,6 +118,7 @@ fn start_status_loop(
     plugin: CallablePlugin,
     config: PluginConfig,
     loop_duration: &Option<ConfigDuration>,
+    monitoring: Sender<telegraf::Point>,
 ) -> Option<JoinHandle<()>> {
     if let Some(monitoring_config) = config.monitoring {
         let mut deadline: Option<DateTime<Utc>> = None;
@@ -134,7 +133,8 @@ fn start_status_loop(
                 &plugin,
                 &config.options.clone().unwrap_or_default(),
             );
-            println!("Status {:?}", status);
+            monitoring.send(status).unwrap();
+
             if time_till_next_run(&monitoring_config.frequency).is_none() {
                 break;
             }
@@ -149,15 +149,39 @@ fn start_status_loop(
     None
 }
 
+fn start_reporting_loop(
+    gateway: Option<String>,
+    receiver: Receiver<telegraf::Point>,
+) -> JoinHandle<()> {
+    match gateway {
+        Some(gateway) => {
+            let mut client = telegraf::Client::new(&gateway).unwrap();
+            std::thread::spawn(move || {
+                for point in receiver {
+                    if let Err(error) = client.write_point(&point) {
+                        eprintln!("Failed to report status to gateway: {error}");
+                    }
+                }
+            })
+        }
+
+        None => std::thread::spawn(move || receiver.into_iter().for_each(drop)),
+    }
+}
+
 pub fn start_main_loop(config: KittypawsConfig) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
+
+    let (sender, receiver) = channel();
+    let reporting_thread = start_reporting_loop(config.monitoring_gateway, receiver);
+    handles.push(reporting_thread);
 
     for plugconf in config.plugins {
         // TODO: Stop this uglyness
         match load_plugin(&plugconf.name) {
             Ok(plugin) => {
                 if let Some(status_thread) =
-                    start_status_loop(plugin, plugconf.clone(), &config.duration)
+                    start_status_loop(plugin, plugconf.clone(), &config.duration, sender.clone())
                 {
                     handles.push(status_thread);
                 }
@@ -174,6 +198,7 @@ pub fn start_main_loop(config: KittypawsConfig) {
         }
     }
 
+    drop(sender);
     for handle in handles {
         if let Err(e) = handle.join() {
             println!("Error: {:?}", e);

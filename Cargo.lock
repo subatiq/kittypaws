@@ -424,6 +424,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "form_urlencoded"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
+dependencies = [
+ "percent-encoding",
+]
+
+[[package]]
 name = "gag"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -497,6 +506,16 @@ checksum = "0703ae284fc167426161c2e3f1da3ea71d94b21bedbcc9494e92b28e334e3dca"
 dependencies = [
  "cxx",
  "cxx-build",
+]
+
+[[package]]
+name = "idna"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
+dependencies = [
+ "unicode-bidi",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -582,6 +601,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_yaml",
+ "telegraf",
 ]
 
 [[package]]
@@ -817,6 +837,12 @@ dependencies = [
  "password-hash",
  "sha2",
 ]
+
+[[package]]
+name = "percent-encoding"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "pkg-config"
@@ -1213,6 +1239,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9410d0f6853b1d94f0e519fb95df60f29d2c1eff2d921ffdf01a4c8a3b54f12d"
 
 [[package]]
+name = "telegraf"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d2007d39154fa1a72fb43fc6f0b9b79c1588c433eba286e059b0be91b3822c4"
+dependencies = [
+ "telegraf_derive",
+ "url",
+]
+
+[[package]]
+name = "telegraf_derive"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87d5d67fb11a9579d8772043e81e1f0432497ea65534e65b9f6a94e6edc9abc4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.105",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1273,16 +1320,46 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
+name = "tinyvec"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "445e881f4f6d382d5f27c034e25eb92edd7c784ceab92a0937db7f2e9471b938"
+dependencies = [
+ "tinyvec_macros",
+]
+
+[[package]]
+name = "tinyvec_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
 name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
+name = "unicode-bidi"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08f95100a766bf4f8f28f90d77e0a5461bbdb219042e7679bebe79004fed8d75"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
+
+[[package]]
+name = "unicode-normalization"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
+dependencies = [
+ "tinyvec",
+]
 
 [[package]]
 name = "unicode-width"
@@ -1307,6 +1384,17 @@ name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+
+[[package]]
+name = "url"
+version = "2.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22784dbdf76fdde8af1aeda5622b546b422b6fc585325248a2bf9f5e41e94d6c"
+dependencies = [
+ "form_urlencoded",
+ "idna",
+ "percent-encoding",
+]
 
 [[package]]
 name = "utf8parse"

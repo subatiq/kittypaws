@@ -6,8 +6,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use super::StatusValue;
-
 impl PluginInterface for pyo3::Py<PyAny> {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
         let mut pyconfig = HashMap::new();
@@ -21,7 +19,7 @@ impl PluginInterface for pyo3::Py<PyAny> {
         Ok(())
     }
 
-    fn status(&self, _: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String> {
+    fn status(&self, _: &HashMap<String, String>) -> Result<telegraf::Point, String> {
         unimplemented!("Python plugins do not support status checks now")
     }
 }
