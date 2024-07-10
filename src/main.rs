@@ -30,8 +30,10 @@ pub enum Command {
         name: String,
     },
     Install {
-        name: String,
+        github_path: String,
+        #[arg(short, long, default_value = "master")]
         branch: String,
+        #[arg(short, long)]
         save_as: Option<String>,
     },
 }
@@ -53,7 +55,7 @@ fn main() {
             start_main_loop(config);
         },
         Command::List => list_plugins().unwrap(),
-        Command::Install { name, branch, save_as } => install_from_github(&name, &branch, save_as).unwrap(),
+        Command::Install { github_path, branch, save_as } => install_from_github(&github_path, &branch, save_as).unwrap(),
         Command::Uninstall { name } => remove_plugin(name).unwrap(),
     }
 }
