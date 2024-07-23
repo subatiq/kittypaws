@@ -8,7 +8,7 @@ use python_plugin::load as load_py_plugin;
 
 use crate::intervals::{time_till_next_run, wait_duration};
 use crate::stdout_styling::style_line;
-use paws_config::{Duration as ConfigDuration, KittypawsConfig, PluginConfig};
+use paws_config::{Duration as ConfigDuration, KittypawsConfig, MonitoringOptions, PluginConfig};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::thread;
@@ -26,7 +26,11 @@ pub enum PluginLanguage {
 
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
-    fn status(&self, config: &HashMap<String, String>) -> Result<telegraf::Point, String>;
+    fn status(
+        &self,
+        config: &HashMap<String, String>,
+        monitoring_config: &Option<MonitoringOptions>,
+    ) -> Result<telegraf::Point, String>;
 }
 
 #[derive(Debug)]
@@ -59,12 +63,13 @@ fn get_status(
     name: &str,
     plugin: &CallablePlugin,
     config: &HashMap<String, String>,
+    monitoring_config: &Option<MonitoringOptions>,
 ) -> telegraf::Point {
     println!(
         "{}",
         style_line(name.to_string(), "Fetching status...".to_string())
     );
-    match plugin.status(config) {
+    match plugin.status(config, monitoring_config) {
         Ok(status) => {
             println!(
                 "{}",
@@ -120,7 +125,7 @@ fn start_status_loop(
     loop_duration: &Option<ConfigDuration>,
     monitoring: Sender<telegraf::Point>,
 ) -> Option<JoinHandle<()>> {
-    if let Some(monitoring_config) = config.monitoring {
+    if let Some(monitoring_config) = config.monitoring.clone() {
         let mut deadline: Option<DateTime<Utc>> = None;
 
         if let Some(loop_duration) = loop_duration {
@@ -132,6 +137,7 @@ fn start_status_loop(
                 &config.name,
                 &plugin,
                 &config.options.clone().unwrap_or_default(),
+                &config.monitoring.clone(),
             );
             monitoring.send(status).unwrap();
 

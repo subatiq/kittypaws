@@ -1,4 +1,5 @@
-use telegraf::protocol::Field;
+use paws_config::MonitoringOptions;
+use telegraf::protocol::{Field, Tag};
 use telegraf::FieldData;
 
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
@@ -8,6 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 struct BashCommand {
+    name: String,
     executable: PathBuf,
     status_checker: Option<PathBuf>,
 }
@@ -31,7 +33,11 @@ impl PluginInterface for BashCommand {
         Ok(())
     }
 
-    fn status(&self, config: &HashMap<String, String>) -> Result<telegraf::Point, String> {
+    fn status(
+        &self,
+        config: &HashMap<String, String>,
+        monitoring_config: &Option<MonitoringOptions>,
+    ) -> Result<telegraf::Point, String> {
         // get a string of args and values from hashmap
         if let Some(command) = &self.status_checker {
             let output = Command::new("bash")
@@ -66,9 +72,23 @@ impl PluginInterface for BashCommand {
                     }
                 }
             }
+
+            let mut tags = vec![Tag {
+                name: "name".to_string(),
+                value: self.name.clone(),
+            }];
+            if let Some(monitoring_config) = monitoring_config {
+                if let Some(extra_tags) = monitoring_config.extra_tags.clone() {
+                    tags.extend(extra_tags.iter().map(|(key, value)| Tag {
+                        name: key.to_owned(),
+                        value: value.to_owned(),
+                    }));
+                }
+            }
+
             return Ok(telegraf::Point {
-                measurement: "kittypaws".to_owned(), // TODO
-                tags: Vec::new(),
+                measurement: "kittypaws".to_owned(),
+                tags,
                 fields,
                 timestamp: None,
             });
@@ -101,6 +121,7 @@ pub fn load(name: &str) -> Result<CallablePlugin, String> {
     }
 
     Ok(Box::new(BashCommand {
+        name: name.to_string(),
         executable,
         status_checker,
     }))

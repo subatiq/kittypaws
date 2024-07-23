@@ -1,4 +1,5 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
+use paws_config::MonitoringOptions;
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
 use pyo3::types::{PyList, PyModule};
@@ -19,7 +20,7 @@ impl PluginInterface for pyo3::Py<PyAny> {
         Ok(())
     }
 
-    fn status(&self, _: &HashMap<String, String>) -> Result<telegraf::Point, String> {
+    fn status(&self, _: &HashMap<String, String>, _: &Option<MonitoringOptions>) -> Result<telegraf::Point, String> {
         unimplemented!("Python plugins do not support status checks now")
     }
 }

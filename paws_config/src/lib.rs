@@ -53,6 +53,7 @@ pub enum FrequencyOptions {
 #[derive(Debug, Deserialize, Clone)]
 pub struct MonitoringOptions {
     pub frequency: FrequencyOptions,
+    pub extra_tags: Option<HashMap<String, String>>
 }
 
 #[derive(Debug, Deserialize, Clone)]
