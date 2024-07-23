@@ -1,7 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 use serde::Deserialize;
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Duration(std::time::Duration);
 
 impl Duration {
@@ -26,7 +25,7 @@ impl<'de> Deserialize<'de> for Duration {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum StartupOptions {
     Hot,
@@ -35,13 +34,13 @@ pub enum StartupOptions {
     Delayed(Duration),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RandomRange<T> {
     pub min: T,
     pub max: T,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum FrequencyOptions {
     Once,
@@ -51,17 +50,30 @@ pub enum FrequencyOptions {
     Random(RandomRange<Duration>),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
+pub struct GlobalMonitoringOptions {
+    pub dsn: String,
+    pub extra_tags: Option<HashMap<String, String>>
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct PluginMonitoringOptions {
+    pub frequency: FrequencyOptions,
+    pub extra_tags: Option<HashMap<String, String>>
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct PluginConfig {
     pub name: String,
     pub startup: StartupOptions,
     pub frequency: FrequencyOptions,
-    pub healthcheck: Option<String>,
+    pub monitoring: Option<PluginMonitoringOptions>,
     pub options: Option<HashMap<String, String>>
 }
 
 #[derive(Debug, Deserialize)]
 pub struct KittypawsConfig {
+    pub monitoring: Option<GlobalMonitoringOptions>,
     pub duration: Option<Duration>,
     pub plugins: Vec<PluginConfig>,
 }

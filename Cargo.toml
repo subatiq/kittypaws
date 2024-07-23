@@ -1,4 +1,4 @@
-workspace = { members = ["paws_config", "paws_install"] }
+workspace = { members = ["paws_config", "paws_install", "paws_monitoring"] }
 [package]
 name = "kittypaws"
 version = "0.1.0"
@@ -18,7 +18,10 @@ libloading = "0.5"
 serde_yaml = "0.9.34"
 paws_config = { path = "paws_config" }
 paws_install = { path = "paws_install" }
+paws_monitoring = { path = "paws_monitoring" }
 iso8601 = { version = "0.6.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
-pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
+pyo3 = { version = "0.17.3", features = ["auto-initialize"] }
 clap = { version = "4.5.4", features = ["derive"] }
+uuid = { version = "1.10.0", features = ["v4"] }
+
