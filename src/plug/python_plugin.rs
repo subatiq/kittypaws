@@ -7,6 +7,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use super::StatusValue;
+
 impl PluginInterface for pyo3::Py<PyAny> {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
         let mut pyconfig = HashMap::new();
@@ -20,7 +22,7 @@ impl PluginInterface for pyo3::Py<PyAny> {
         Ok(())
     }
 
-    fn status(&self, _: &HashMap<String, String>, _: &Option<MonitoringOptions>) -> Result<telegraf::Point, String> {
+    fn status(&self, _: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String> {
         unimplemented!("Python plugins do not support status checks now")
     }
 }
@@ -56,7 +58,9 @@ pub fn load(name: &str) -> Result<CallablePlugin, String> {
                 let app: Py<PyAny> = PyModule::from_code(py, &code, "", "")
                     .unwrap_or_else(|_| panic!("Can't find main.py for plugin {}", name))
                     .getattr("run")
-                    .unwrap_or_else(|_| panic!("Can't find run function in main.py for plugin {}", name))
+                    .unwrap_or_else(|_| {
+                        panic!("Can't find run function in main.py for plugin {}", name)
+                    })
                     .into();
                 app
             });

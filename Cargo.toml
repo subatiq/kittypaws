@@ -22,4 +22,3 @@ iso8601 = { version = "0.6.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 pyo3 = {"version" = "0.17.3", features = ["auto-initialize"]}
 clap = { version = "4.5.4", features = ["derive"] }
-telegraf = "0.6"
