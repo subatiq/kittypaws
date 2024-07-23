@@ -1,7 +1,12 @@
-# kittypaws
-A tool for simulating destructive behavior of production infrastructure
+![](docs/promo/logo_full_bg.svg)
 
-![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
+<p align="center">
+  <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/subatiq/kittypaws?color=yellow&style=for-the-badge">
+  <img alt="GitHub" src="https://img.shields.io/github/license/subatiq/kittypaws?color=yellow&style=for-the-badge">
+  <img alt="Gitlab code coverage" src="https://img.shields.io/gitlab/coverage/subatiq/kittypaws/master?style=for-the-badge">
+</p>
+
+A tool for simulating destructive behavior of production infrastructure
 
 WIP mode. Yet works for a few months in our company (doesn't mean it's stable).
 
