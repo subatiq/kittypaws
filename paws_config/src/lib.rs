@@ -51,7 +51,13 @@ pub enum FrequencyOptions {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct MonitoringOptions {
+pub struct GlobalMonitoringOptions {
+    pub dsn: String,
+    pub extra_tags: Option<HashMap<String, String>>
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct PluginMonitoringOptions {
     pub frequency: FrequencyOptions,
     pub extra_tags: Option<HashMap<String, String>>
 }
@@ -61,13 +67,13 @@ pub struct PluginConfig {
     pub name: String,
     pub startup: StartupOptions,
     pub frequency: FrequencyOptions,
-    pub monitoring: Option<MonitoringOptions>,
+    pub monitoring: Option<PluginMonitoringOptions>,
     pub options: Option<HashMap<String, String>>
 }
 
 #[derive(Debug, Deserialize)]
 pub struct KittypawsConfig {
-    pub monitoring_gateway: Option<String>,
+    pub monitoring: Option<GlobalMonitoringOptions>,
     pub duration: Option<Duration>,
     pub plugins: Vec<PluginConfig>,
 }

@@ -1,5 +1,4 @@
 use crate::plug::{unwrap_home_path, CallablePlugin, PluginInterface, PLUGINS_PATH};
-use paws_config::MonitoringOptions;
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
 use pyo3::types::{PyList, PyModule};
@@ -7,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use super::StatusValue;
+use super::PluginStatusValue;
 
 impl PluginInterface for pyo3::Py<PyAny> {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String> {
@@ -22,7 +21,7 @@ impl PluginInterface for pyo3::Py<PyAny> {
         Ok(())
     }
 
-    fn status(&self, _: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String> {
+    fn status(&self, _: &HashMap<String, String>) -> Result<HashMap<String, PluginStatusValue>, String> {
         unimplemented!("Python plugins do not support status checks now")
     }
 }

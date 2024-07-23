@@ -3,11 +3,15 @@ mod bash_plugin;
 mod python_plugin;
 use bash_plugin::load as load_sh_plugin;
 use chrono::{DateTime, Utc};
+use paws_monitoring::{init_monitoring_backend, MetricSender};
 use python_plugin::load as load_py_plugin;
+use uuid::Uuid;
 
 use crate::intervals::{time_till_next_run, wait_duration};
 use crate::stdout_styling::style_line;
-use paws_config::{Duration as ConfigDuration, KittypawsConfig, MonitoringOptions, PluginConfig};
+use paws_config::{
+    Duration as ConfigDuration, GlobalMonitoringOptions, KittypawsConfig, PluginConfig,
+};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::thread;
@@ -24,15 +28,28 @@ pub enum PluginLanguage {
 }
 
 #[derive(Debug)]
-pub enum StatusValue {
-    Int(i32),
-    Float(f32),
+pub enum PluginStatusValue {
+    Int(i64),
+    Float(f64),
     String(String),
+}
+
+impl From<&PluginStatusValue> for paws_monitoring::StatusValue {
+    fn from(value: &PluginStatusValue) -> Self {
+        match value {
+            PluginStatusValue::Int(val) => Self::Int(val.to_owned()),
+            PluginStatusValue::Float(val) => Self::Float(val.to_owned()),
+            PluginStatusValue::String(val) => Self::String(val.to_owned()),
+        }
+    }
 }
 
 pub trait PluginInterface {
     fn run(&self, config: &HashMap<String, String>) -> Result<(), String>;
-    fn status(&self, config: &HashMap<String, String>) -> Result<HashMap<String, StatusValue>, String>;
+    fn status(
+        &self,
+        config: &HashMap<String, String>,
+    ) -> Result<HashMap<String, PluginStatusValue>, String>;
 }
 
 #[derive(Debug)]
@@ -65,7 +82,7 @@ fn get_status(
     name: &str,
     plugin: &CallablePlugin,
     config: &HashMap<String, String>,
-) {
+) -> HashMap<String, PluginStatusValue> {
     println!(
         "{}",
         style_line(name.to_string(), "Fetching status...".to_string())
@@ -76,6 +93,7 @@ fn get_status(
                 "{}",
                 style_line(name.to_string(), format!("Status: {:?}", status))
             );
+            status
         }
         Err(err) => panic!("Error while running plugin {}: {}", name, err),
     }
@@ -120,11 +138,14 @@ fn start_execution_loop(
 }
 
 fn start_status_loop(
+    run_id: Uuid,
     plugin: CallablePlugin,
     config: PluginConfig,
     loop_duration: &Option<ConfigDuration>,
+    global_monitoring_config: GlobalMonitoringOptions,
+    mut monitoring_client: Box<dyn MetricSender>,
 ) -> Option<JoinHandle<()>> {
-    if let Some(monitoring_config) = config.monitoring.clone() {
+    if let Some(plugin_monitoring_config) = config.monitoring.clone() {
         let mut deadline: Option<DateTime<Utc>> = None;
 
         if let Some(loop_duration) = loop_duration {
@@ -137,8 +158,32 @@ fn start_status_loop(
                 &plugin,
                 &config.options.clone().unwrap_or_default(),
             );
+
+            // unwrap: status loop can't work without monitoring config
+            let mut tags = HashMap::new();
+            tags.insert("name".to_string(), config.name.clone());
+            tags.insert("run_id".to_string(), run_id.to_string());
+
+            if let Some(extra_tags) = global_monitoring_config.extra_tags.clone() {
+                tags.extend(extra_tags);
+            }
+            if let Some(plugin_monitoring_config) = config.monitoring.clone() {
+                if let Some(extra_tags) = plugin_monitoring_config.extra_tags {
+                    tags.extend(extra_tags);
+                }
+            }
+
+            let fields: HashMap<String, paws_monitoring::StatusValue> = status
+                .iter()
+                .map(|(key, value)| (key.to_string(), value.into()))
+                .collect();
+
+            if let Err(err) = monitoring_client.send_metric(tags, fields) {
+                println!("Can't send metric: {}", err);
+            };
+
             println!("Status {:?}", status);
-            if time_till_next_run(&monitoring_config.frequency).is_none() {
+            if time_till_next_run(&plugin_monitoring_config.frequency).is_none() {
                 break;
             }
             if let Some(deadline) = deadline {
@@ -155,14 +200,28 @@ fn start_status_loop(
 pub fn start_main_loop(config: KittypawsConfig) {
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
+    let run_id = Uuid::new_v4();
+    println!("RUN ID: {}", run_id);
+
     for plugconf in config.plugins {
         // TODO: Stop this uglyness
         match load_plugin(&plugconf.name) {
             Ok(plugin) => {
-                if let Some(status_thread) =
-                    start_status_loop(plugin, plugconf.clone(), &config.duration)
-                {
-                    handles.push(status_thread);
+                if let Some(monitoring_config) = config.monitoring.clone() {
+                    let monitoring_client = init_monitoring_backend(
+                        paws_monitoring::MonitoringBackend::Telegraf,
+                        &monitoring_config.dsn,
+                    );
+                    if let Some(status_thread) = start_status_loop(
+                        run_id,
+                        plugin,
+                        plugconf.clone(),
+                        &config.duration,
+                        monitoring_config,
+                        monitoring_client,
+                    ) {
+                        handles.push(status_thread);
+                    }
                 }
             }
             Err(err) => println!("! WARNING: {}", err),
@@ -182,6 +241,9 @@ pub fn start_main_loop(config: KittypawsConfig) {
             println!("Error: {:?}", e);
         }
     }
+
+    println!("---");
+    println!("RUN ID: {}", run_id);
 }
 
 fn unwrap_home_path(path: &str) -> PathBuf {
