@@ -99,6 +99,10 @@ https://github.com/subatiq/kittypaws-deathloop
 Breaks time sync on the host\
 https://github.com/subatiq/kittypaws-timeburglar
 
+#### Shelly Plug
+Remotely turn off and on power on [Shelly Plug](https://www.shelly.com/de/products/shelly-plug-s-gen3) (Tested on S model only) to simulate a power outage
+https://github.com/invian/kittypaws-shelly-plug
+
 
 ### Configuration structure
 
